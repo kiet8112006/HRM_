@@ -1,0 +1,35 @@
+<div class="toolbar">
+
+    <a
+        href="{{ url_for('leave.add_leave_request') }}"
+        class="btn btn-success">
+
+        + Thêm Đơn Nghỉ Phép
+
+    </a>
+    {% if session.get('role') == 'Admin' %}
+    <button
+    type="submit"
+    form="bulk-delete-form"
+    id="delete-selected-btn"
+    class="btn btn-danger"
+    disabled>
+    Xóa đã chọn
+    </button>
+    {% endif %}
+    {% if session.get('role') in ['Admin', 'Manager'] %}
+    <a
+        href="{{ url_for('leave.export_leave_requests_csv') }}"
+        class="btn btn-primary">
+        📄 Xuất CSV
+    </a>
+    {% endif %}
+    <a
+        href="{{ url_for('dashboard.home') }}"
+        class="btn btn-secondary">
+
+        ← Dashboard
+
+    </a>
+
+</div>

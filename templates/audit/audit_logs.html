@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch Sử Thao Tác (Audit Log) - HRM System</title>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- CSS Hệ Thống & CSS Chuyên Biệt Cho Audit -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/audit.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="page-header">
+
+        <div class="header-title">
+
+            <h1>
+                <div class="header-icon-box">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <span>Audit Log</span>
+            </h1>
+
+            <p class="sub-title">Nhật ký truy vết và ghi nhận toàn bộ lịch sử thao tác người dùng hệ thống</p>
+
+        </div>
+
+        <div class="header-actions">
+
+            <a href="{{ url_for('dashboard.home') }}" class="btn btn-secondary">
+                <i class="fa-solid fa-house"></i> Dashboard
+            </a>
+
+        </div>
+
+    </div>
+
+    {% include "components/_flash.html" %}
+
+    <div class="card filter-card mb-2">
+
+        {% include "audit/components/_search.html" %}
+
+    </div>
+
+    <div class="card mb-2">
+
+        {% include "audit/components/_actions.html" %}
+
+    </div>
+
+    <div class="card table-card">
+
+        {% include "audit/components/_table.html" %}
+
+    </div>
+
+    <div class="pagination-wrapper">
+
+        {% include "audit/components/_pagination.html" %}
+
+    </div>
+
+</div>
+
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+</body>
+
+</html>

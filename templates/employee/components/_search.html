@@ -1,0 +1,82 @@
+<form method="GET" class="card search-form">
+
+    <div class="search-group">
+        <input
+            class="form-control"
+            type="text"
+            name="keyword"
+            placeholder="Tên nhân viên..."
+            value="{{ keyword | e }}">
+    </div>
+
+    <select
+        class="form-control filter-select"
+        name="department">
+
+        <option value="">
+            Tất cả phòng ban
+        </option>
+
+        {% for dept in departments %}
+        <option
+            value="{{ dept.DepartmentName }}"
+            {% if department == dept.DepartmentName %}
+            selected
+            {% endif %}>
+            {{ dept.DepartmentName }}
+        </option>
+        {% endfor %}
+
+    </select>
+
+    <select
+        class="form-control filter-select"
+        name="position">
+
+        <option value="">
+            Tất cả chức vụ
+        </option>
+
+        {% for pos in positions %}
+        <option
+            value="{{ pos.PositionName }}"
+            {% if position == pos.PositionName %}
+            selected
+            {% endif %}>
+            {{ pos.PositionName }}
+        </option>
+        {% endfor %}
+
+    </select>
+
+    <select
+        class="form-control filter-select"
+        name="status">
+
+        <option value="">
+            Tất cả trạng thái
+        </option>
+
+        <option value="Active"
+            {% if status == "Active" %}
+            selected
+            {% endif %}>
+            Active
+        </option>
+
+        <option value="Inactive"
+            {% if status == "Inactive" %}
+            selected
+            {% endif %}>
+            Inactive
+        </option>
+
+    </select>
+
+    <button
+        class="btn btn-primary"
+        type="submit">
+        Tìm Kiếm
+    </button>
+
+</form>

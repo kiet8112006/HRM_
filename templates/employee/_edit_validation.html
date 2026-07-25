@@ -1,0 +1,129 @@
+<script>
+
+document.querySelector('[name="fullname"]')
+.addEventListener("blur", function(){
+
+    this.value = this.value
+        .trim()
+        .replace(/\s+/g, " ");
+
+});
+
+</script>
+
+<script>
+
+document.querySelector('[name="email"]')
+.addEventListener("blur", function(){
+
+    this.value = this.value
+        .trim()
+        .toLowerCase();
+
+});
+
+</script>
+
+<script>
+
+document.querySelector('[name="phone"]')
+.addEventListener("input", function(){
+
+    this.value = this.value.replace(/\D/g, "");
+
+});
+
+document.querySelector('[name="emergencyphone"]')
+.addEventListener("input", function(){
+
+    this.value = this.value.replace(/\D/g, "");
+
+});
+
+document.querySelector('[name="citizenid"]')
+.addEventListener("input", function(){
+
+    this.value = this.value.replace(/\D/g, "");
+
+});
+
+</script>
+
+<script>
+
+document.querySelector("form").addEventListener("submit", function(e){
+
+    const fullname = document.querySelector("[name='fullname']").value.trim();
+    const email = document.querySelector("[name='email']").value.trim();
+    const phone = document.querySelector("[name='phone']").value.trim();
+    const citizenid = document.querySelector("[name='citizenid']").value.trim();
+    const address = document.querySelector("[name='address']").value.trim();
+    const nationality = document.querySelector("[name='nationality']").value.trim();
+    const emergencycontact = document.querySelector("[name='emergencycontact']").value.trim();
+    const emergencyphone = document.querySelector("[name='emergencyphone']").value.trim();
+
+    if(fullname === ""){
+        alert("Họ và tên không được để trống!");
+        e.preventDefault();
+        return;
+    }
+
+    if(fullname.length < 3 || fullname.length > 100){
+        alert("Họ và tên phải từ 3-100 ký tự!");
+        e.preventDefault();
+        return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if(!emailRegex.test(email)){
+        alert("Email không hợp lệ!");
+        e.preventDefault();
+        return;
+    }
+
+    if(!/^0\d{9}$/.test(phone)){
+        alert("Số điện thoại phải gồm 10 số và bắt đầu bằng 0!");
+        e.preventDefault();
+        return;
+    }
+
+    if(!/^\d{12}$/.test(citizenid)){
+        alert("CCCD phải gồm đúng 12 chữ số!");
+        e.preventDefault();
+        return;
+    }
+
+    if(address === ""){
+        alert("Địa chỉ không được để trống!");
+        e.preventDefault();
+        return;
+    }
+
+    if(address.length > 255){
+        alert("Địa chỉ tối đa 255 ký tự!");
+        e.preventDefault();
+        return;
+    }
+
+    if(nationality === ""){
+        alert("Quốc tịch không được để trống!");
+        e.preventDefault();
+        return;
+    }
+
+    if(emergencycontact === ""){
+        alert("Người liên hệ khẩn cấp không được để trống!");
+        e.preventDefault();
+        return;
+    }
+
+    if(!/^0\d{9}$/.test(emergencyphone)){
+        alert("Số điện thoại khẩn cấp không hợp lệ!");
+        e.preventDefault();
+        return;
+    }
+
+});
+
+</script>

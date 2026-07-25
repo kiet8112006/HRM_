@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sửa Chấm Công</title>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- CSS Tái Sử Dụng Cho Tất Cả Các Trang Form Cập Nhật (Edit) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/edit.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark_light_edit_mode.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="page-header">
+
+        <div>
+
+            <h1>
+                Sửa Chấm Công
+            </h1>
+
+        </div>
+
+    </div>
+
+    {% include "attendance/components/_flash.html" %}
+
+    {% include "attendance/_edit_form.html" %}
+
+</div>
+
+    {% include "attendance/_edit_validation.html" %}
+
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+</body>
+
+</html>

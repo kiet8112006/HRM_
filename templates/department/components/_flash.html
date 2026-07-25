@@ -1,0 +1,45 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container">
+
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} flash-message">
+
+            <div class="flash-content">
+
+                <span class="flash-icon">
+                    {% if category == "success" %}
+                        ✓
+                    {% elif category == "danger" %}
+                        ✕
+                    {% elif category == "warning" %}
+                        ⚠
+                    {% else %}
+                        ℹ
+                    {% endif %}
+                </span>
+
+                <span class="flash-text">
+                    {{ message }}
+                </span>
+
+            </div>
+
+            <!-- Loại bỏ onclick inline -->
+            <button
+                class="flash-close"
+                type="button"
+                aria-label="Đóng">
+                &times;
+            </button>
+
+        </div>
+        {% endfor %}
+
+    </div>
+
+    <!-- Nhúng file JS xử lý Flash Messages từ thư mục static -->
+    <script src="{{ url_for('static', filename='js/flash.js') }}"></script>
+
+    {% endif %}
+{% endwith %}

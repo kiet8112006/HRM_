@@ -1,0 +1,128 @@
+<div class="kpi-grid">
+
+    <!-- Tổng nhân viên -->
+    <article class="kpi-card">
+
+        <div class="kpi-content">
+
+            <span class="kpi-label">
+                Tổng nhân viên
+            </span>
+
+            <h2 class="kpi-value">
+                {{ total_employees }}
+            </h2>
+
+            <div class="kpi-change positive">
+
+                <i class="fa-solid fa-arrow-trend-up"></i>
+
+                Đang hoạt động
+
+            </div>
+
+        </div>
+
+        <div class="kpi-icon primary">
+
+            <i class="fa-solid fa-users"></i>
+
+        </div>
+
+    </article>
+
+    <!-- Phòng ban -->
+    <article class="kpi-card">
+
+        <div class="kpi-content">
+
+            <span class="kpi-label">
+                Phòng ban
+            </span>
+
+            <h2 class="kpi-value">
+                {{ total_departments }}
+            </h2>
+
+            <div class="kpi-change neutral">
+
+                <i class="fa-solid fa-building"></i>
+
+                Đang quản lý
+
+            </div>
+
+        </div>
+
+        <div class="kpi-icon success">
+
+            <i class="fa-solid fa-building"></i>
+
+        </div>
+
+    </article>
+
+    <!-- Chức vụ -->
+    <article class="kpi-card">
+
+        <div class="kpi-content">
+
+            <span class="kpi-label">
+                Chức vụ
+            </span>
+
+            <h2 class="kpi-value">
+                {{ total_positions }}
+            </h2>
+
+            <div class="kpi-change neutral">
+
+                <i class="fa-solid fa-briefcase"></i>
+
+                Hệ thống chức vụ
+
+            </div>
+
+        </div>
+
+        <div class="kpi-icon warning">
+
+            <i class="fa-solid fa-briefcase"></i>
+
+        </div>
+
+    </article>
+
+    <!-- Tổng quỹ lương -->
+    <article class="kpi-card">
+
+        <div class="kpi-content">
+
+            <span class="kpi-label">
+                Tổng quỹ lương
+            </span>
+
+            <h2 class="kpi-value">
+
+                {{ total_salary_display }}
+            </h2>
+
+            <div class="kpi-change {% if salary_growth >= 0 %}positive{% else %}negative{% endif %}">
+
+                <i class="fa-solid fa-money-bill-trend-up"></i>
+
+                {{ salary_growth }}% so với tháng trước
+
+            </div>
+
+        </div>
+
+        <div class="kpi-icon danger">
+
+            <i class="fa-solid fa-money-bill-wave"></i>
+
+        </div>
+
+    </article>
+
+</div>

@@ -1,0 +1,86 @@
+<script>
+document.querySelector("form").addEventListener("submit", function(e){
+
+    const positionCode = document.querySelector("[name='position_code']").value.trim().toUpperCase();
+    const positionName = document.querySelector("[name='position_name']").value.trim();
+    const positionLevel = Number(document.querySelector("[name='position_level']").value);
+    const minSalary = Number(document.querySelector("[name='min_salary']").value);
+    const maxSalary = Number(document.querySelector("[name='max_salary']").value);
+    const status = document.querySelector("[name='status']").value;
+    const description = document.querySelector("[name='description']").value.trim();
+
+    // Mã chức vụ
+    if(positionCode === ""){
+        alert("Mã chức vụ không được để trống!");
+        e.preventDefault();
+        return;
+    }
+
+    const codeRegex = /^[A-Z0-9]{2,10}$/;
+
+    if(!codeRegex.test(positionCode)){
+        alert("Mã chức vụ không hợp lệ!");
+        e.preventDefault();
+        return;
+    }
+
+    // Tên chức vụ
+    if(positionName === ""){
+        alert("Tên chức vụ không được để trống!");
+        e.preventDefault();
+        return;
+    }
+
+    const nameRegex = /^[A-Za-zÀ-Ỹà-ỹ0-9\s]+$/;
+
+    if(!nameRegex.test(positionName)){
+        alert("Tên chức vụ không hợp lệ!");
+        e.preventDefault();
+        return;
+    }
+
+    // Level
+    if(positionLevel < 1 || positionLevel > 20){
+        alert("Cấp bậc phải từ 1 đến 20!");
+        e.preventDefault();
+        return;
+    }
+
+    // Lương
+    if(minSalary < 0){
+        alert("Lương tối thiểu phải lớn hơn hoặc bằng 0!");
+        e.preventDefault();
+        return;
+    }
+
+    if(maxSalary < 0){
+        alert("Lương tối đa phải lớn hơn hoặc bằng 0!");
+        e.preventDefault();
+        return;
+    }
+
+    if(minSalary > maxSalary){
+        alert("Lương tối thiểu không được lớn hơn lương tối đa!");
+        e.preventDefault();
+        return;
+    }
+
+    // Trạng thái
+    if(
+        status !== "Hoạt động" &&
+        status !== "Ngừng hoạt động"
+    ){
+        alert("Trạng thái không hợp lệ!");
+        e.preventDefault();
+        return;
+    }
+
+    // Mô tả
+    if(description.length > 255){
+        alert("Mô tả tối đa 255 ký tự!");
+        e.preventDefault();
+        return;
+    }
+
+});
+</script>

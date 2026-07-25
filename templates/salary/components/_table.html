@@ -1,0 +1,138 @@
+<form
+    id="bulk-delete-form"
+    method="POST"
+    action="{{ url_for('salary.delete_selected_salaries') }}"
+    data-entity="bảng lương">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="table-wrapper">
+
+    <table class="table">
+
+<tr>{% if session.get('role') == 'Admin' %}
+    <th style="width:50px;">
+    <input
+        type="checkbox"
+        id="check-all">
+</th>{% endif %}
+    <th>ID</th>
+    <th>Mã Lương</th>
+    <th>Nhân Viên</th>
+    <th>Lương Cơ Bản</th>
+    <th>Thưởng</th>
+    <th>Phụ Cấp</th>
+    <th>Tăng Ca</th>
+    <th>Khấu Trừ</th>
+    <th>Thuế</th>
+    <th>Bảo Hiểm</th>
+    <th>Thực Nhận</th>
+    <th>Tháng</th>
+    <th>Năm</th>
+    <th>Ngày Trả</th>
+    <th>Trạng Thái</th>
+    <th style="width:180px;">Thao Tác</th>
+
+</tr>
+
+{% for salary in salaries %}
+
+<tr>{% if session.get('role') == 'Admin' %}
+    <td>
+
+    <!-- Đã đổi class="salary-checkbox" -> class="item-checkbox" -->
+    <input
+        type="checkbox"
+        class="item-checkbox"
+        name="salary_ids"
+        value="{{ salary.SalaryID }}">
+
+</td>{% endif %}
+    <td>{{ salary.SalaryID }}</td>
+
+    <td>{{ salary.SalaryCode }}</td>
+
+    <td>{{ salary.Fullname }}</td>
+
+    <td>{{ "{:,.0f}".format(salary.BaseSalary or 0) }}</td>
+
+    <td>{{ "{:,.0f}".format(salary.Bonus or 0) }}</td>
+
+    <td>{{ "{:,.0f}".format(salary.Allowance or 0) }}</td>
+
+    <td>{{ "{:,.0f}".format(salary.OvertimePay or 0) }}</td>
+
+    <td>{{ "{:,.0f}".format(salary.Deduction or 0) }}</td>
+
+    <td>{{ "{:,.0f}".format(salary.Tax or 0) }}</td>
+
+    <td>{{ "{:,.0f}".format(salary.Insurance or 0) }}</td>
+
+    <td>{{ "{:,.0f}".format(salary.NetSalary or 0) }}</td>
+
+    <td>{{ salary.Month }}</td>
+
+    <td>{{ salary.Year }}</td>
+
+    <td>{{ salary.PaymentDate }}</td>
+
+    <td>
+
+        {% if salary.Status == "Đã thanh toán" %}
+
+            <span class="badge badge-success">
+                {{ salary.Status }}
+            </span>
+
+        {% elif salary.Status == "Đã duyệt" %}
+
+            <span class="badge badge-primary">
+                {{ salary.Status }}
+            </span>
+
+        {% else %}
+
+            <span class="badge badge-warning">
+                {{ salary.Status }}
+            </span>
+
+        {% endif %}
+
+    </td>
+
+    <td>
+
+        <div class="table-actions">
+            {% if session.get('role') in ['Admin', 'Manager'] %}
+            <a
+                href="/edit_salary/{{ salary.SalaryID }}"
+                class="btn btn-primary"
+                title="Sửa">
+                Sửa
+            </a>
+            {% endif %}
+            {% if session.get('role') == 'Admin' %}
+            <a
+                href="/delete_salary/{{ salary.SalaryID }}"
+                class="btn btn-danger"
+                title="Xóa"
+                onclick="return confirm('Bạn có chắc muốn xóa bảng lương này? Hành động này không thể hoàn tác!')">
+                Xóa
+            </a>
+            {% endif %}
+
+           
+        </div>
+
+    </td>
+
+</tr>
+
+{% endfor %}
+
+    </table>
+
+</div>
+
+</form>
+
+<!-- Nhúng file JS dùng chung -->
+<script src="{{ url_for('static', filename='js/bulk_delete.js') }}"></script>

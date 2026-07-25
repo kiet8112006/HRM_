@@ -1,0 +1,345 @@
+<form method="POST" class="form-card" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-grid">
+        <div class="form-group full">
+
+    <label class="form-label">
+        Ảnh nhân viên
+    </label>
+
+    <div class="avatar-upload">
+
+        <img
+            id="preview-image"
+            src="{% if employee.Photo %}
+                    {{ url_for('static', filename=employee.Photo) }}
+                 {% else %}
+                    {{ url_for('static', filename='avatars/default.png') }}
+                 {% endif %}"
+            class="preview-avatar preview-click">
+
+        <input
+            id="photo"
+            type="file"
+            name="photo"
+            class="form-control"
+            accept=".jpg,.jpeg,.png,.webp">
+
+    </div>
+
+</div>
+
+        <!-- Họ tên -->
+        <div class="form-group">
+            <label class="form-label">Họ Và Tên</label>
+            <input
+                class="form-control"
+                type="text"
+                name="fullname"
+                value="{{ employee.FullName }}"
+                maxlength="100"
+                placeholder="Ví dụ: Nguyễn Văn A"
+                autocomplete="off"
+                required>
+        </div>
+
+        <!-- Giới tính -->
+        <div class="form-group">
+            <label class="form-label">Giới Tính</label>
+
+            <select class="form-control" name="gender">
+
+                <option value="Nam"
+                    {% if employee.Gender=="Nam" %}
+                    selected
+                    {% endif %}>
+                    Nam
+                </option>
+
+                <option value="Nữ"
+                    {% if employee.Gender=="Nữ" %}
+                    selected
+                    {% endif %}>
+                    Nữ
+                </option>
+
+            </select>
+        </div>
+
+        <!-- Ngày sinh -->
+        <div class="form-group">
+            <label class="form-label">Ngày Sinh</label>
+
+            <input
+                class="form-control"
+                type="date"
+                name="dob"
+                value="{{ employee.DOB.strftime('%Y-%m-%d') }}"
+                required>
+        </div>
+
+        <!-- Ngày tuyển dụng -->
+        <div class="form-group">
+            <label class="form-label">Ngày Tuyển Dụng</label>
+
+            <input
+                class="form-control"
+                type="date"
+                name="hiredate"
+                value="{{ employee.HireDate.strftime('%Y-%m-%d') }}"
+                required>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+            <label class="form-label">Email</label>
+
+            <input
+                class="form-control"
+                type="email"
+                name="email"
+                value="{{ employee.Email }}"
+                maxlength="100"
+                required>
+        </div>
+
+        <!-- Điện thoại -->
+        <div class="form-group">
+            <label class="form-label">Số Điện Thoại</label>
+
+            <input
+                class="form-control"
+                type="text"
+                name="phone"
+                value="{{ employee.Phone }}"
+                maxlength="10"
+                required>
+        </div>
+
+        <!-- CCCD -->
+        <div class="form-group">
+            <label class="form-label">CCCD</label>
+
+            <input
+                class="form-control"
+                type="text"
+                name="citizenid"
+                value="{{ employee.CitizenID }}"
+                maxlength="12"
+                required>
+        </div>
+
+        <!-- Quốc tịch -->
+        <div class="form-group">
+            <label class="form-label">Quốc Tịch</label>
+
+            <input
+                class="form-control"
+                type="text"
+                name="nationality"
+                value="{{ employee.Nationality }}"
+                maxlength="50"
+                required>
+        </div>
+
+        <!-- Phòng ban -->
+        <div class="form-group">
+            <label class="form-label">Phòng Ban</label>
+
+            <select
+                class="form-control"
+                name="department_id">
+
+                {% for dept in departments %}
+
+                <option
+                    value="{{ dept.DepartmentID }}"
+                    {% if dept.DepartmentID == employee.DepartmentID %}
+                    selected
+                    {% endif %}>
+
+                    {{ dept.DepartmentName }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <!-- Chức vụ -->
+        <div class="form-group">
+            <label class="form-label">Chức Vụ</label>
+
+            <select
+                class="form-control"
+                name="position_id">
+
+                {% for pos in positions %}
+
+                <option
+                    value="{{ pos.PositionID }}"
+                    {% if pos.PositionID == employee.PositionID %}
+                    selected
+                    {% endif %}>
+
+                    {{ pos.PositionName }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <!-- Quản lý -->
+        <div class="form-group">
+            <label class="form-label">Quản Lý</label>
+
+            <select
+                class="form-control"
+                name="manager_id">
+
+                <option value="">
+                    -- Không có --
+                </option>
+
+                {% for manager in managers %}
+
+                <option
+                    value="{{ manager.EmployeeID }}"
+                    {% if employee.ManagerID == manager.EmployeeID %}
+                    selected
+                    {% endif %}>
+
+                    {{ manager.FullName }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <!-- Trạng thái -->
+        <div class="form-group">
+            <label class="form-label">Trạng Thái</label>
+
+            <select
+                class="form-control"
+                name="status">
+
+                <option value="Active"
+                    {% if employee.Status=="Active" %}
+                    selected
+                    {% endif %}>
+                    Active
+                </option>
+
+                <option value="Inactive"
+                    {% if employee.Status=="Inactive" %}
+                    selected
+                    {% endif %}>
+                    Inactive
+                </option>
+
+            </select>
+        </div>
+
+        <!-- Địa chỉ -->
+        <div class="form-group full">
+            <label class="form-label">Địa Chỉ</label>
+
+            <textarea
+                class="form-control"
+                name="address"
+                rows="3"
+                maxlength="255"
+                required>{{ employee.Address }}</textarea>
+        </div>
+
+        <!-- Tình trạng hôn nhân -->
+        <div class="form-group">
+            <label class="form-label">Tình Trạng Hôn Nhân</label>
+
+            <select
+                class="form-control"
+                name="maritalstatus">
+
+                <option value="Độc thân"
+                    {% if employee.MaritalStatus=="Độc thân" %}
+                    selected
+                    {% endif %}>
+                    Độc thân
+                </option>
+
+                <option value="Đã kết hôn"
+                    {% if employee.MaritalStatus=="Đã kết hôn" %}
+                    selected
+                    {% endif %}>
+                    Đã kết hôn
+                </option>
+
+            </select>
+        </div>
+
+        <!-- Người liên hệ -->
+        <div class="form-group">
+            <label class="form-label">
+                Người Liên Hệ Khẩn Cấp
+            </label>
+
+            <input
+                class="form-control"
+                type="text"
+                name="emergencycontact"
+                value="{{ employee.EmergencyContact }}"
+                maxlength="100"
+                required>
+        </div>
+
+        <!-- SĐT khẩn cấp -->
+        <div class="form-group">
+            <label class="form-label">
+                SĐT Khẩn Cấp
+            </label>
+
+            <input
+                class="form-control"
+                type="text"
+                name="emergencyphone"
+                value="{{ employee.EmergencyPhone }}"
+                maxlength="10"
+                required>
+        </div>
+
+    </div>
+
+    <div class="form-actions">
+
+        <button
+            type="submit"
+            class="btn btn-primary">
+
+            💾 Cập Nhật
+
+        </button>
+
+        <a
+            href="{{ url_for('employee.employees') }}"
+            class="btn btn-secondary">
+
+            ← Quay lại
+
+        </a>
+
+    </div>
+<div id="image-modal" class="image-modal">
+
+    <span id="close-modal">&times;</span>
+
+    <img id="modal-image">
+
+</div>
+</form>

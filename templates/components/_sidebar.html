@@ -1,0 +1,142 @@
+<aside class="sidebar" id="sidebar">
+
+    <!-- Sidebar Header -->
+    <div class="sidebar-header">
+        <a href="{{ url_for('dashboard.home') }}" class="sidebar-logo">
+            <div class="sidebar-logo-icon">
+                <i class="fa-solid fa-building-user"></i>
+            </div>
+            <div class="sidebar-logo-text">
+                <span class="sidebar-brand-name">HRM System</span>
+                <span class="sidebar-brand-sub">Human Resource</span>
+            </div>
+        </a>
+
+        <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Toggle Sidebar">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar-nav">
+        <div class="sidebar-group">
+            <span class="sidebar-group-title">MAIN MENU</span>
+
+            <a href="{{ url_for('dashboard.home') }}" class="sidebar-link {% if request.endpoint == 'dashboard.home' %}active{% endif %}">
+                <i class="sidebar-icon fa-solid fa-house"></i>
+                <span class="sidebar-text">Dashboard</span>
+            </a>
+
+            {% if session.get('role') in ['Admin', 'Manager'] %}
+            <a href="{{ url_for('employee.employees') }}" class="sidebar-link {% if 'employee' in request.endpoint %}active{% endif %}">
+                <i class="sidebar-icon fa-solid fa-user-group"></i>
+                <span class="sidebar-text">Nhân viên</span>
+            </a>
+            {% endif %}
+
+            {% if session.get('role') == 'Admin' %}
+            <a href="{{ url_for('department.departments') }}" class="sidebar-link {% if 'department' in request.endpoint %}active{% endif %}">
+                <i class="sidebar-icon fa-solid fa-sitemap"></i>
+                <span class="sidebar-text">Phòng ban</span>
+            </a>
+            {% endif %}
+
+            {% if session.get('role') == 'Admin' %}
+            <a href="{{ url_for('position.positions') }}" class="sidebar-link {% if 'position' in request.endpoint %}active{% endif %}">
+                <i class="sidebar-icon fa-solid fa-briefcase"></i>
+                <span class="sidebar-text">Chức vụ</span>
+            </a>
+            {% endif %}
+            
+            {% if session.get('role') == 'Admin' %}
+            <a href="{{ url_for('salary.salaries') }}" class="sidebar-link {% if 'salary' in request.endpoint %}active{% endif %}">
+                <i class="sidebar-icon fa-solid fa-file-invoice-dollar"></i>
+                <span class="sidebar-text">Lương</span>
+            </a>
+            {% endif %}
+            
+            {% if session.get('role') == 'Admin' %}
+            <a href="{{ url_for('contract.contracts') }}" class="sidebar-link {% if 'contract' in request.endpoint %}active{% endif %}">
+                <i class="sidebar-icon fa-solid fa-file-contract"></i>
+                <span class="sidebar-text">Hợp đồng</span>
+            </a>
+            {% endif %}
+            
+            {% if session.get('role') == 'Admin' %}
+            <a href="{{ url_for('attendance.attendance') }}" class="sidebar-link {% if 'attendance' in request.endpoint %}active{% endif %}">
+                <i class="sidebar-icon fa-solid fa-clock"></i>
+                <span class="sidebar-text">Chấm công</span>
+            </a>
+            {% endif %}
+            
+            {% if session.get('role') == 'Admin' %}
+            <a href="{{ url_for('leave.leave_requests') }}" class="sidebar-link {% if 'leave' in request.endpoint %}active{% endif %}">
+                <i class="sidebar-icon fa-solid fa-calendar-minus"></i>
+                <span class="sidebar-text">Nghỉ phép</span>
+            </a>
+            {% endif %}
+            
+            {% if session.get("role") in ["Admin","Manager"] %}
+            <a href="{{ url_for('report.reports') }}" class="sidebar-link {% if 'report' in request.endpoint %}active{% endif %}">
+                <i class="sidebar-icon fa-solid fa-chart-pie"></i>
+                <span class="sidebar-text">Báo cáo</span>
+            </a>
+            {% endif %}
+
+            {% if session.get('role') in ['Admin', 'Manager'] %}
+            <a href="{{ url_for('notification.notifications') }}" class="sidebar-link {% if 'notification' in request.endpoint %}active{% endif %}">
+                <i class="sidebar-icon fa-solid fa-bell"></i>
+                <span class="sidebar-text">Thông báo</span>
+                {% if unread_count > 0 %}
+                <span class="badge badge-danger badge-pill sidebar-badge">{{ unread_count }}</span>
+                {% endif %}
+            </a>
+            {% endif %}
+
+            {% if session.get('role') == 'Admin' %}
+            <a href="{{ url_for('audit.audit_logs') }}" class="sidebar-link {% if 'audit' in request.endpoint %}active{% endif %}">
+                <i class="sidebar-icon fa-solid fa-clipboard-list"></i>
+                <span class="sidebar-text">Audit Log</span>
+            </a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer">
+        <div class="admin-dropdown">
+            <button class="sidebar-dropdown-toggle" id="adminToggle" type="button">
+                <div class="sidebar-user">
+                    <div class="side-avatar">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <div class="sidebar-user-info">
+                        <span class="sidebar-name">{{ session.get("full_name", "Guest") }}</span>
+                        <span class="sidebar-role">{{ session.get("role", "User") }}</span>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-down sidebar-dropdown-arrow"></i>
+            </button>
+
+            <div class="sidebar-dropdown-menu">
+                <div class="sidebar-submenu">
+                    <button id="theme-toggle" class="sidebar-submenu-link theme-toggle" type="button">
+                        <i class="fa-solid fa-moon"></i>
+                        <span>Dark Mode</span>
+                    </button>
+
+                    <a class="sidebar-submenu-link" href="{{ url_for('auth.change_password') }}">
+                        <i class="fa-solid fa-key"></i>
+                        <span>Đổi mật khẩu</span>
+                    </a>
+
+                    <a href="{{ url_for('auth.logout') }}" class="sidebar-submenu-link logout-btn text-danger">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>Đăng xuất</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</aside>

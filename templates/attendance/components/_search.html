@@ -1,0 +1,62 @@
+<form method="GET" class="card search-form">
+
+    <div class="search-group">
+
+        <input
+            class="form-control"
+            type="text"
+            name="keyword"
+            placeholder="Tên nhân viên..."
+            value="{{ keyword| e }}">
+
+    </div>
+
+    <select
+        class="form-control filter-select"
+        name="status">
+
+        <option value="">
+            Tất cả trạng thái
+        </option>
+
+        <option
+            value="Có mặt"
+            {% if status == "Có mặt" %}
+            selected
+            {% endif %}>
+
+            Có mặt
+
+        </option>
+
+        <option
+            value="Đi trễ"
+            {% if status == "Đi trễ" %}
+            selected
+            {% endif %}>
+
+            Đi trễ
+
+        </option>
+
+        <option
+            value="Vắng"
+            {% if status == "Vắng" %}
+            selected
+            {% endif %}>
+
+            Vắng
+
+        </option>
+
+    </select>
+
+    <button
+        class="btn btn-primary"
+        type="submit">
+
+        Tìm Kiếm
+
+    </button>
+
+</form>

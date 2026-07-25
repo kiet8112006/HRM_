@@ -1,0 +1,273 @@
+<script>
+
+document.querySelector('[name="contract_number"]')
+.addEventListener("input", function(){
+
+    this.value = this.value.toUpperCase();
+
+});
+
+</script>
+<script>
+
+document.querySelector('[name="work_location"]')
+.addEventListener("input", function(){
+
+    this.value = this.value
+        .replace(/\s+/g," ")
+        .trimStart();
+
+});
+
+</script>
+<script>
+
+document.querySelector("form")
+.addEventListener("submit", function(e){
+
+    const workLocation =
+    document.querySelector(
+        '[name="work_location"]'
+    ).value.trim();
+
+    if(workLocation.length > 100){
+
+        alert(
+            "Nơi làm việc tối đa 100 ký tự!"
+        );
+
+        e.preventDefault();
+
+    }
+
+});
+
+</script>
+<script>
+
+document.querySelector('[name="signer"]')
+.addEventListener("input", function(){
+
+    this.value = this.value
+        .replace(/\s+/g," ")
+        .trimStart();
+
+});
+
+</script>
+<script>
+
+document.querySelector("form")
+.addEventListener("submit", function(e){
+
+    const contractNumber =
+    document.querySelector(
+        '[name="contract_number"]'
+    ).value.trim();
+
+    const regex =
+    /^[A-Z0-9/-]{3,30}$/;
+
+    if(!regex.test(contractNumber)){
+
+        alert(
+            "Số hợp đồng không hợp lệ!"
+        );
+
+        e.preventDefault();
+
+    }
+
+});
+
+</script>
+<script>
+
+document.querySelector("form")
+.addEventListener("submit", function(e){
+
+    const signer =
+    document.querySelector(
+        '[name="signer"]'
+    ).value.trim();
+    if (signer.length > 100){
+        alert('Tên người ký tối đa 100 ký tự!');
+        e.preventDefault();
+        return;
+    }
+
+    const regex =
+    /^([A-Za-zÀ-Ỹà-ỹ]+)(\s[A-Za-zÀ-Ỹà-ỹ]+)+$/;
+
+    if(!regex.test(signer)){
+
+        alert(
+            "Tên người ký không hợp lệ!"
+        );
+
+        e.preventDefault();
+
+    }
+
+});
+
+</script>
+<script>
+
+document.querySelector("form")
+.addEventListener("submit", function(e){
+
+    const signDate =
+    new Date(
+        document.querySelector(
+            '[name="sign_date"]'
+        ).value
+    );
+
+    const startDate =
+    new Date(
+        document.querySelector(
+            '[name="start_date"]'
+        ).value
+    );
+
+    const endDate =
+    new Date(
+        document.querySelector(
+            '[name="end_date"]'
+        ).value
+    );
+    const today = new Date();
+
+    today.setHours(0,0,0,0);
+    if(signDate > today){
+        alert("Ngày ký không được sau ngày hiện tại!");
+        e.preventDefault();
+        return;
+    }
+    if(endDate <= startDate){
+
+        alert(
+            "Ngày kết thúc phải sau ngày bắt đầu!"
+        );
+
+        e.preventDefault();
+
+        return;
+
+    }
+
+    if(signDate > startDate){
+
+        alert(
+            "Ngày ký không được sau ngày bắt đầu!"
+        );
+
+        e.preventDefault();
+
+    }
+
+});
+
+</script>
+<script>
+
+document.querySelector("form")
+.addEventListener("submit", function(e){
+
+    const salary =
+    Number(
+        document.querySelector(
+            '[name="basic_salary"]'
+        ).value
+    );
+
+    if(salary < 0){
+
+        alert(
+            "Lương cơ bản phải lớn hơn hoặc bằng 0!"
+        );
+
+        e.preventDefault();
+
+    }
+    if(salary > 1000000000){
+        alert('Lương cơ bản không được vượt quá 1 tỷ!');
+        e.preventDefault();
+        return;
+    }
+
+});
+
+</script>
+<script>
+
+document.querySelector("form")
+.addEventListener("submit", function(e){
+
+    const description =
+    document.querySelector(
+        '[name="description"]'
+    ).value;
+
+    if(description.length > 255){
+
+        alert(
+            "Mô tả tối đa 255 ký tự!"
+        );
+
+        e.preventDefault();
+
+    }
+
+});
+
+</script>
+<script>
+
+document.querySelector("form")
+.addEventListener("submit", function(e){
+
+    const file =
+    document.querySelector(
+        '[name="contract_file"]'
+    ).value.trim();
+
+    if(file.length > 255){
+
+        alert(
+            "Đường dẫn file tối đa 255 ký tự!"
+        );
+
+        e.preventDefault();
+
+    }
+
+});
+
+</script>
+<script>
+
+document.querySelector("form")
+.addEventListener("submit", function(e){
+
+    const probation =
+    Number(
+        document.querySelector(
+            '[name="probation_months"]'
+        ).value
+    );
+
+    if(probation < 0 || probation > 12){
+
+        alert(
+            "Thử việc từ 0 đến 12 tháng!"
+        );
+
+        e.preventDefault();
+
+    }
+
+});
+
+</script>

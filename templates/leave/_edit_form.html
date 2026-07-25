@@ -1,0 +1,268 @@
+<form method="POST" id="leaveForm" class="form-card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-grid">
+
+        <!-- Nhân viên -->
+
+        <div class="form-group">
+
+            <label class="form-label">
+                Nhân Viên
+            </label>
+
+            <select
+                class="form-control"
+                name="employee_id"
+                required>
+
+                {% for emp in employees %}
+
+                <option
+                    value="{{ emp.EmployeeID }}"
+                    {% if emp.EmployeeID == request_data.EmployeeID %}
+                    selected
+                    {% endif %}>
+
+                    {{ emp.FullName }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+        <!-- Loại nghỉ -->
+
+        <div class="form-group">
+
+            <label class="form-label">
+                Loại Nghỉ
+            </label>
+
+            <select
+                class="form-control"
+                name="leave_type"
+                required>
+
+                <option value="Nghỉ phép năm"
+                    {% if request_data.LeaveType == 'Nghỉ phép năm' %}
+                    selected
+                    {% endif %}>
+                    Nghỉ phép năm
+                </option>
+
+                <option value="Nghỉ bệnh"
+                    {% if request_data.LeaveType == 'Nghỉ bệnh' %}
+                    selected
+                    {% endif %}>
+                    Nghỉ bệnh
+                </option>
+
+                <option value="Nghỉ không lương"
+                    {% if request_data.LeaveType == 'Nghỉ không lương' %}
+                    selected
+                    {% endif %}>
+                    Nghỉ không lương
+                </option>
+
+                <option value="Nghỉ thai sản"
+                    {% if request_data.LeaveType == 'Nghỉ thai sản' %}
+                    selected
+                    {% endif %}>
+                    Nghỉ thai sản
+                </option>
+
+                <option value="Nghỉ việc riêng"
+                    {% if request_data.LeaveType == 'Nghỉ việc riêng' %}
+                    selected
+                    {% endif %}>
+                    Nghỉ việc riêng
+                </option>
+
+            </select>
+
+        </div>
+
+        <!-- Từ ngày -->
+
+        <div class="form-group">
+
+            <label class="form-label">
+                Từ Ngày
+            </label>
+
+            <input
+                class="form-control"
+                type="date"
+                name="from_date"
+                value="{{ request_data.FromDate }}"
+                required>
+
+        </div>
+
+        <!-- Đến ngày -->
+
+        <div class="form-group">
+
+            <label class="form-label">
+                Đến Ngày
+            </label>
+
+            <input
+                class="form-control"
+                type="date"
+                name="to_date"
+                value="{{ request_data.ToDate }}"
+                required>
+
+        </div>
+
+        <!-- Tổng số ngày -->
+
+        <div class="form-group">
+
+            <label class="form-label">
+                Tổng Số Ngày
+            </label>
+
+            <input
+                class="form-control"
+                type="number"
+                id="total_days"
+                value="{{ request_data.TotalDays }}"
+                readonly>
+
+        </div>
+
+        <!-- Trạng thái -->
+
+        <div class="form-group">
+
+            <label class="form-label">
+                Trạng Thái
+            </label>
+
+            <select
+                class="form-control"
+                name="status"
+                required>
+
+                <option value="Đã duyệt"
+                    {% if request_data.Status=='Đã duyệt' %}
+                    selected
+                    {% endif %}>
+                    Đã duyệt
+                </option>
+
+                <option value="Chờ duyệt"
+                    {% if request_data.Status=='Chờ duyệt' %}
+                    selected
+                    {% endif %}>
+                    Chờ duyệt
+                </option>
+
+                <option value="Từ chối"
+                    {% if request_data.Status=='Từ chối' %}
+                    selected
+                    {% endif %}>
+                    Từ chối
+                </option>
+
+            </select>
+
+        </div>
+
+        <!-- Người duyệt -->
+
+        <div class="form-group">
+
+            <label class="form-label">
+                Người Duyệt
+            </label>
+
+            <input
+                class="form-control"
+                type="text"
+                value="{{ request_data.ApprovedBy or '' }}"
+                readonly>
+
+        </div>
+
+        <!-- Ngày duyệt -->
+
+        <div class="form-group">
+
+            <label class="form-label">
+                Ngày Duyệt
+            </label>
+
+            <input
+                class="form-control"
+                type="date"
+                value="{{ request_data.ApprovedDate or '' }}"
+                readonly>
+
+        </div>
+
+        <!-- Lý do -->
+
+        <div class="form-group full">
+
+            <label class="form-label">
+                Lý Do
+            </label>
+
+            <textarea
+                class="form-control"
+                name="reason"
+                id="reason"
+                rows="4"
+                maxlength="255"
+                required>{{ request_data.Reason }}</textarea>
+
+        </div>
+
+        <!-- Lý do từ chối -->
+
+        <div
+            class="form-group full"
+            id="reject_section">
+
+            <label class="form-label">
+                Lý Do Từ Chối
+            </label>
+
+            <textarea
+                class="form-control"
+                name="reject_reason"
+                id="reject_reason"
+                rows="3">{{ request_data.RejectReason or '' }}</textarea>
+
+        </div>
+
+    </div>
+
+    <div class="form-actions">
+
+        <button
+            type="submit"
+            class="btn btn-primary">
+
+            💾 Cập Nhật
+
+        </button>
+
+        <a
+            href="{{ url_for('leave.leave_requests') }}"
+            class="btn btn-secondary">
+
+            ← Quay Lại
+
+        </a>
+
+    </div>
+
+</form>

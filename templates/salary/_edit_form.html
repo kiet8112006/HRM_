@@ -1,0 +1,191 @@
+<form method="POST" class="form-card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-grid">
+
+        <div class="form-group">
+            <label class="form-label">Nhân Viên</label>
+            <select class="form-control" name="employee_id">
+
+                {% for emp in employees %}
+
+                <option
+                    value="{{ emp.EmployeeID }}"
+                    {% if emp.EmployeeID == salary.EmployeeID %}
+                    selected
+                    {% endif %}>
+
+                    {{ emp.FullName }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Lương Cơ Bản</label>
+            <input
+                class="form-control"
+                type="number"
+                name="base_salary"
+                value="{{ salary.BaseSalary }}"
+                min="1"
+                max="1000000000"
+                step="1000"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Thưởng</label>
+            <input
+                class="form-control"
+                type="number"
+                name="bonus"
+                value="{{ salary.Bonus }}"
+                min="0"
+                max="1000000000"
+                step="1000">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Phụ Cấp</label>
+            <input
+                class="form-control"
+                type="number"
+                name="allowance"
+                value="{{ salary.Allowance }}"
+                min="0"
+                max="1000000000"
+                step="1000">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Lương Tăng Ca</label>
+            <input
+                class="form-control"
+                type="number"
+                name="overtime_pay"
+                value="{{ salary.OvertimePay }}"
+                min="0"
+                max="1000000000"
+                step="1000">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Khấu Trừ</label>
+            <input
+                class="form-control"
+                type="number"
+                name="deduction"
+                value="{{ salary.Deduction }}"
+                min="0"
+                max="1000000000"
+                step="1000">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Thuế</label>
+            <input
+                class="form-control"
+                type="number"
+                name="tax"
+                value="{{ salary.Tax }}"
+                min="0"
+                max="1000000000"
+                step="1000">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Bảo Hiểm</label>
+            <input
+                class="form-control"
+                type="number"
+                name="insurance"
+                value="{{ salary.Insurance }}"
+                min="0"
+                max="1000000000"
+                step="1000">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Tháng</label>
+            <input
+                class="form-control"
+                type="number"
+                name="month"
+                value="{{ salary.Month }}"
+                min="1"
+                max="12"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Năm</label>
+            <input
+                class="form-control"
+                type="number"
+                name="year"
+                value="{{ salary.Year }}"
+                min="2020"
+                max="2100"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Ngày Thanh Toán</label>
+            <input
+                class="form-control"
+                type="date"
+                name="payment_date"
+                value="{{ salary.PaymentDate }}"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Trạng Thái</label>
+            <select class="form-control" name="status">
+
+                <option
+                    value="Đã thanh toán"
+                    {% if salary.Status == "Đã thanh toán" %}
+                    selected
+                    {% endif %}>
+                    Đã thanh toán
+                </option>
+
+                <option
+                    value="Chưa thanh toán"
+                    {% if salary.Status == "Chưa thanh toán" %}
+                    selected
+                    {% endif %}>
+                    Chưa thanh toán
+                </option>
+
+            </select>
+        </div>
+
+    </div>
+
+    <div class="form-actions">
+
+        <button
+            type="submit"
+            class="btn btn-primary">
+
+            💾 Cập Nhật
+
+        </button>
+
+        <a
+            href="{{ url_for('salary.salaries') }}"
+            class="btn btn-secondary">
+
+            ← Quay lại
+
+        </a>
+
+    </div>
+
+</form>

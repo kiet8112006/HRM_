@@ -1,0 +1,71 @@
+<script>
+
+const fromDate =
+document.querySelector("[name='from_date']");
+const today = new Date();
+
+today.setHours(0,0,0,0);
+
+const toDate =
+document.querySelector("[name='to_date']");
+
+const total =
+document.getElementById("total_days");
+const reason =
+document.getElementById("reason");
+
+reason.addEventListener("blur",function(){
+
+    reason.value=reason.value.trim();
+
+});
+
+function calculateDays(){
+
+    if(fromDate.value && toDate.value){
+
+        let start =
+        new Date(fromDate.value);
+        let end =new Date(toDate.value);
+
+        if (start < today){
+            alert('Ngày bắt đầu nghỉ không được nhỏ hơn hôm nay!');
+            fromDate.value='';
+            total.value='';
+            return;
+        }
+        if (end < start){
+            alert('Ngày kết thúc không được nhỏ hơn ngày bắt đầu!');
+            toDate.value='';
+            total.value='';
+            return;
+        }
+
+        let diff =
+        (end-start)/(1000*60*60*24)+1;
+        if (diff >30){
+            alert('Một đơn nghỉ không được vượt quá 30 ngày!');
+            toDate.value='';
+            total.value='';
+            return;
+        }
+
+        if(diff>=1){
+            total.value=diff;
+        }else{
+            total.value="";
+        }
+
+    }
+
+}
+
+fromDate.addEventListener(
+"change",
+calculateDays);
+
+toDate.addEventListener(
+"change",
+calculateDays);
+
+</script>

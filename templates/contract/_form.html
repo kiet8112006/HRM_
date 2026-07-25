@@ -1,0 +1,253 @@
+<form method="POST" class="form-card" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-grid">
+
+        <div class="form-group">
+            <label class="form-label">Nhân Viên</label>
+
+            <select
+                class="form-control"
+                name="employee_id"
+                required>
+
+                {% for emp in employees %}
+
+                <option value="{{ emp.EmployeeID }}">
+                    {{ emp.FullName }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Số Hợp Đồng</label>
+
+            <input
+                class="form-control"
+                type="text"
+                name="contract_number"
+                placeholder="Ví dụ: HD2026-001"
+                maxlength="30"
+                autocomplete="off"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Loại Hợp Đồng</label>
+
+            <select
+                class="form-control"
+                name="contract_type"
+                required>
+
+                <option value="Thử việc">Thử việc</option>
+                <option value="1 năm">1 năm</option>
+                <option value="2 năm">2 năm</option>
+                <option value="Không xác định thời hạn">
+                    Không xác định thời hạn
+                </option>
+
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Lương Cơ Bản</label>
+
+            <input
+                class="form-control"
+                type="number"
+                name="basic_salary"
+                min="0"
+                max="1000000000"
+                step="1000"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Phòng Ban</label>
+
+            <select
+                class="form-control"
+                name="department_id"
+                required>
+
+                {% for department in departments %}
+
+                <option value="{{ department.DepartmentID }}">
+                    {{ department.DepartmentName }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Chức Vụ</label>
+
+            <select
+                class="form-control"
+                name="position_id"
+                required>
+
+                {% for position in positions %}
+
+                <option value="{{ position.PositionID }}">
+                    {{ position.PositionName }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Nơi Làm Việc</label>
+
+            <input
+                class="form-control"
+                type="text"
+                name="work_location"
+                placeholder="Ví dụ: Trụ sở TP.HCM"
+                maxlength="100"
+                autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Người Ký</label>
+
+            <input
+                class="form-control"
+                type="text"
+                name="signer"
+                maxlength="100"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Ngày Ký</label>
+
+            <input
+                class="form-control"
+                type="date"
+                name="sign_date">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Ngày Bắt Đầu</label>
+
+            <input
+                class="form-control"
+                type="date"
+                name="start_date"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Ngày Kết Thúc</label>
+
+            <input
+                class="form-control"
+                type="date"
+                name="end_date"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Thử Việc (Tháng)</label>
+
+            <input
+                class="form-control"
+                type="number"
+                name="probation_months"
+                min="0"
+                max="12"
+                value="0">
+        </div>
+        <div class="form-group">
+
+    <label class="form-label required">
+
+        File Hợp Đồng (PDF)
+
+    </label>
+
+    <input
+        type="file"
+        class="form-control"
+        id="contract-file"
+        name="contract_file"
+        accept=".pdf"
+        required>
+
+    <small class="form-description">
+
+        Chỉ chấp nhận file PDF.
+
+    </small>
+
+</div>
+
+
+
+        <div class="form-group">
+            <label class="form-label">Trạng Thái</label>
+
+            <select
+                class="form-control"
+                name="status"
+                required>
+
+                <option value="Hiệu lực">
+                    Hiệu lực
+                </option>
+
+                <option value="Gia hạn">
+                    Gia hạn
+                </option>
+
+                <option value="Hoàn thành">
+                    Hoàn thành
+                </option>
+
+            </select>
+        </div>
+
+        <div class="form-group" style="grid-column: 1 / -1;">
+
+            <label class="form-label">Mô Tả</label>
+
+            <textarea
+                class="form-control"
+                name="description"
+                rows="5"
+                maxlength="255"></textarea>
+
+        </div>
+
+    </div>
+
+    <div class="form-actions">
+
+        <button
+            type="submit"
+            class="btn btn-primary">
+
+            ➕ Thêm Hợp Đồng
+
+        </button>
+
+        <a
+            href="{{ url_for('contract.contracts') }}"
+            class="btn btn-secondary">
+
+            ← Quay lại
+
+        </a>
+
+    </div>
+
+</form>

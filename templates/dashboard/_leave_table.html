@@ -1,0 +1,147 @@
+<div class="dashboard-table-card">
+
+    <div class="dashboard-table-header">
+
+        <div>
+
+            <h3 class="dashboard-table-title">
+
+                <i class="fa-solid fa-calendar-xmark"></i>
+
+                Đơn nghỉ phép chờ duyệt
+
+            </h3>
+
+            <p class="dashboard-table-subtitle">
+
+                Danh sách các đơn nghỉ phép đang chờ phê duyệt.
+
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="dashboard-table-body">
+
+        <div class="table-wrapper">
+
+            <table class="table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Nhân viên</th>
+
+                        <th>Từ ngày</th>
+
+                        <th>Đến ngày</th>
+
+                        <th>Trạng thái</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% if pending_leave_requests %}
+
+                        {% for leave in pending_leave_requests %}
+
+                        <tr>
+
+                            <td>
+
+                                {{ leave.FullName }}
+
+                            </td>
+
+                            <td>
+
+                                {{ leave.FromDate.strftime('%d/%m/%Y') }}
+
+                            </td>
+
+                            <td>
+
+                                {{ leave.ToDate.strftime('%d/%m/%Y') }}
+
+                            </td>
+
+                            <td>
+
+                                {% if leave.ApprovalStatus == 'Approved' %}
+
+                                    <span class="badge badge-success">
+
+                                        Đã duyệt
+
+                                    </span>
+
+                                {% elif leave.ApprovalStatus == 'Rejected' %}
+
+                                    <span class="badge badge-danger">
+
+                                        Từ chối
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge badge-warning">
+
+                                        Chờ duyệt
+
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    {% else %}
+
+                        <tr>
+
+                            <td colspan="4" class="table-empty">
+
+                                Không có đơn nghỉ phép nào đang chờ duyệt.
+
+                            </td>
+
+                        </tr>
+
+                    {% endif %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <div class="dashboard-table-footer">
+
+        <span>
+
+            Tổng:
+
+            <strong>
+
+                {{ pending_leave_requests|length }}
+
+            </strong>
+
+            đơn nghỉ phép
+
+        </span>
+
+    </div>
+
+</div>_

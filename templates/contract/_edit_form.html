@@ -1,0 +1,276 @@
+<form method="POST" class="form-card" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-grid">
+
+        <div class="form-group">
+            <label class="form-label">Nhân Viên</label>
+
+            <select
+                class="form-control"
+                name="employee_id"
+                required>
+
+                {% for emp in employees %}
+
+                <option
+                    value="{{ emp.EmployeeID }}"
+                    {% if emp.EmployeeID == contract.EmployeeID %}
+                    selected
+                    {% endif %}>
+
+                    {{ emp.FullName }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Số Hợp Đồng</label>
+
+            <input
+                class="form-control"
+                type="text"
+                name="contract_number"
+                value="{{ contract.ContractNumber }}"
+                maxlength="30"
+                autocomplete="off"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Loại Hợp Đồng</label>
+
+            <input
+                class="form-control"
+                type="text"
+                name="contract_type"
+                value="{{ contract.ContractType }}"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Lương Cơ Bản</label>
+
+            <input
+                class="form-control"
+                type="number"
+                name="basic_salary"
+                value="{{ contract.BasicSalary }}"
+                min="0"
+                max="1000000000"
+                step="1000"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Phòng Ban</label>
+
+            <select
+                class="form-control"
+                name="department_id"
+                required>
+
+                {% for department in departments %}
+
+                <option
+                    value="{{ department.DepartmentID }}"
+                    {% if department.DepartmentID == contract.DepartmentID %}
+                    selected
+                    {% endif %}>
+
+                    {{ department.DepartmentName }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Chức Vụ</label>
+
+            <select
+                class="form-control"
+                name="position_id"
+                required>
+
+                {% for position in positions %}
+
+                <option
+                    value="{{ position.PositionID }}"
+                    {% if position.PositionID == contract.PositionID %}
+                    selected
+                    {% endif %}>
+
+                    {{ position.PositionName }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Nơi Làm Việc</label>
+
+            <input
+                class="form-control"
+                type="text"
+                name="work_location"
+                value="{{ contract.WorkLocation }}"
+                maxlength="100"
+                autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Người Ký</label>
+
+            <input
+                class="form-control"
+                type="text"
+                name="signer"
+                value="{{ contract.Signer }}"
+                maxlength="100"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Ngày Ký</label>
+
+            <input
+                class="form-control"
+                type="date"
+                name="sign_date"
+                value="{{ contract.SignDate }}"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Ngày Bắt Đầu</label>
+
+            <input
+                class="form-control"
+                type="date"
+                name="start_date"
+                value="{{ contract.StartDate }}"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Ngày Kết Thúc</label>
+
+            <input
+                class="form-control"
+                type="date"
+                name="end_date"
+                value="{{ contract.EndDate }}"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Thử Việc (Tháng)</label>
+
+            <input
+                class="form-control"
+                type="number"
+                name="probation_months"
+                value="{{ contract.ProbationMonths }}"
+                min="0"
+                max="12"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Đường Dẫn Hợp Đồng</label>
+
+            <input
+                class="form-control"
+                type="file"
+                name="contract_file"
+                value="{{ contract.ContractFile }}"
+                maxlength="255"
+                accept=".pdf">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Trạng Thái</label>
+
+            <select
+                class="form-control"
+                name="status"
+                required>
+
+                <option
+                    value="Hiệu lực"
+                    {% if contract.Status == "Hiệu lực" %}
+                    selected
+                    {% endif %}>
+
+                    Hiệu lực
+
+                </option>
+
+                <option
+                    value="Gia hạn"
+                    {% if contract.Status == "Gia hạn" %}
+                    selected
+                    {% endif %}>
+
+                    Gia hạn
+
+                </option>
+
+                <option
+                    value="Hoàn thành"
+                    {% if contract.Status == "Hoàn thành" %}
+                    selected
+                    {% endif %}>
+
+                    Hoàn thành
+
+                </option>
+
+            </select>
+        </div>
+
+        <div class="form-group" style="grid-column: 1 / -1;">
+
+            <label class="form-label">Mô Tả</label>
+
+            <textarea
+                class="form-control"
+                name="description"
+                rows="5"
+                maxlength="255">{{ contract.Description }}</textarea>
+
+        </div>
+
+    </div>
+
+    <div class="form-actions">
+
+        <button
+            type="submit"
+            class="btn btn-primary">
+
+            💾 Cập Nhật
+
+        </button>
+
+        <a
+            href="{{ url_for('contract.contracts') }}"
+            class="btn btn-secondary">
+
+            ← Quay lại
+
+        </a>
+
+    </div>
+
+</form>

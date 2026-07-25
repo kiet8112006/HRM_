@@ -1,0 +1,136 @@
+<form
+    id="bulk-delete-form"
+    method="POST"
+    action="{{ url_for('leave.delete_selected_leave_requests') }}"
+    data-entity="đơn nghỉ phép">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="table-wrapper">
+
+        <table class="table">
+
+            <thead>
+                <tr>
+
+                    {% if session.get('role') == 'Admin' %}
+                    <th style="width:50px;">
+                        <input
+                            type="checkbox"
+                            id="check-all">
+                    </th>
+                    {% endif %}
+
+                    <th>ID</th>
+                    <th>Nhân Viên</th>
+                    <th>Loại Nghỉ</th>
+                    <th>Từ Ngày</th>
+                    <th>Đến Ngày</th>
+                    <th>Số Ngày</th>
+                    <th>Lý Do</th>
+                    <th>Trạng Thái</th>
+                    <th style="width:180px;">Thao Tác</th>
+
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for r in requests %}
+
+                <tr>
+
+                    {% if session.get('role') == 'Admin' %}
+                    <td>
+                        <!-- Đã đổi class="leave-checkbox" -> class="item-checkbox" -->
+                        <input
+                            type="checkbox"
+                            class="item-checkbox"
+                            name="request_ids"
+                            value="{{ r.RequestID }}">
+                    </td>
+                    {% endif %}
+
+                    <td>{{ r.RequestID }}</td>
+
+                    <td>{{ r.FullName }}</td>
+
+                    <td>{{ r.LeaveType }}</td>
+
+                    <td>{{ r.FromDate }}</td>
+
+                    <td>{{ r.ToDate }}</td>
+
+                    <td>{{ r.TotalDays }}</td>
+
+                    <td title="{{ r.Reason }}">
+                        {{ r.Reason[:40] }}
+                        {% if r.Reason|length > 40 %}
+                            ...
+                        {% endif %}
+                    </td>
+
+                    <td>
+
+                        {% if r.Status == "Đã duyệt" %}
+
+                            <span class="badge badge-success">
+                                Đã duyệt
+                            </span>
+
+                        {% elif r.Status == "Chờ duyệt" %}
+
+                            <span class="badge badge-warning">
+                                Chờ duyệt
+                            </span>
+
+                        {% else %}
+
+                            <span class="badge badge-danger">
+                                Từ chối
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>
+
+                        <div class="table-actions">
+
+                            {% if session.get('role') in ['Admin', 'Manager'] %}
+                            <a
+                                href="/edit_leave_request/{{ r.RequestID }}"
+                                class="btn btn-primary"
+                                title="Sửa">
+                                Sửa
+                            </a>
+                            {% endif %}
+
+                            {% if session.get('role') == 'Admin' %}
+                            <a
+                                href="/delete_leave_request/{{ r.RequestID }}"
+                                class="btn btn-danger"
+                                title="Xóa"
+                                onclick="return confirm('Bạn có chắc muốn xóa đơn nghỉ phép này? Hành động này không thể hoàn tác!')">
+                                Xóa
+                            </a>
+                            {% endif %}
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</form>
+
+<!-- Nhúng file JS dùng chung -->
+<script src="{{ url_for('static', filename='js/bulk_delete.js') }}"></script>

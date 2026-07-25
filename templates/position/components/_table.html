@@ -1,0 +1,128 @@
+<form
+    id="bulk-delete-form"
+    method="POST"
+    action="{{ url_for('position.delete_selected_positions') }}"
+    data-entity="chức vụ">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="table-wrapper">
+
+    <table class="table">
+
+        <tr>{% if session.get('role') == 'Admin' %}
+            <th style="width:50px;">
+    <input
+        type="checkbox"
+        id="check-all">
+</th>{% endif %}
+            <th>ID</th>
+            <th>Mã</th>
+            <th>Tên Chức Vụ</th>
+            <th>Level</th>
+            <th>Lương Min</th>
+            <th>Lương Max</th>
+            <th>Trạng Thái</th>
+            <th>Mô Tả</th>
+            <th style="width:170px;">Thao Tác</th>
+        </tr>
+
+        {% for pos in positions %}
+
+        <tr>{% if session.get('role') == 'Admin' %}
+            <td>
+
+    <!-- Đã đổi class="position-checkbox" -> class="item-checkbox" -->
+    <input
+        type="checkbox"
+        class="item-checkbox"
+        name="position_ids"
+        value="{{ pos.PositionID }}">
+
+</td>{% endif %}
+            <td>{{ pos.PositionID }}</td>
+
+            <td>{{ pos.PositionCode }}</td>
+
+            <td>{{ pos.PositionName }}</td>
+
+            <td>{{ pos.PositionLevel }}</td>
+
+            <td>
+                {% if pos.MinSalary %}
+                    {{ "{:,.0f}".format(pos.MinSalary) }}
+                {% else %}
+                    Chưa cập nhật
+                {% endif %}
+            </td>
+
+            <td>
+                {% if pos.MaxSalary %}
+                    {{ "{:,.0f}".format(pos.MaxSalary) }}
+                {% else %}
+                    Chưa cập nhật
+                {% endif %}
+            </td>
+
+            <td>
+
+                {% if pos.Status == "Hoạt động" %}
+
+                    <span class="badge badge-success">
+                        {{ pos.Status }}
+                    </span>
+
+                {% else %}
+
+                    <span class="badge badge-danger">
+                        {{ pos.Status }}
+                    </span>
+
+                {% endif %}
+
+            </td>
+
+            <td>
+
+                {% if pos.Description %}
+                    {{ pos.Description }}
+                {% else %}
+                    -
+                {% endif %}
+
+            </td>
+
+            <td>
+
+                <div class="table-actions">
+                    {% if session.get('role') in ['Admin', 'Manager'] %}
+                    <a
+                        href="/edit_position/{{ pos.PositionID }}"
+                        class="btn btn-primary"
+                        title="Sửa">
+                        Sửa
+                    </a>
+                    {% endif %}
+                    {% if session.get('role') == 'Admin' %}
+                    <a
+                        href="/delete_position/{{ pos.PositionID }}"
+                        class="btn btn-danger"
+                        title="Xóa"
+                        onclick="return confirm('Bạn có chắc muốn xóa chức vụ này? Hành động này không thể hoàn tác!')">
+                        Xóa
+                    </a>
+                    {% endif %}
+
+                </div>
+
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+</div>
+</form>
+
+<!-- Nhúng file JS dùng chung -->
+<script src="{{ url_for('static', filename='js/bulk_delete.js') }}"></script>

@@ -1,0 +1,174 @@
+/* ==========================================================================
+   HRM SYSTEM - AUTHENTICATION PAGES DARK / LIGHT MODE COMPREHENSIVE
+   Đồng bộ hoàn toàn với static/js/theme.js (html[data-theme="dark" / "light"])
+   Bao phủ: Login, Change Password, Forgot Password
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. KHAI BÁO BIẾN MÀU SẮC (CSS VARIABLES FOR AUTH)
+   -------------------------------------------------------------------------- */
+:root,
+html[data-theme="light"] {
+    --auth-bg-body: #f1f5f9;
+    --auth-bg-card: #ffffff;
+    --auth-border-card: #e2e8f0;
+    --auth-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+
+    --auth-title-color: #0f172a;
+    --auth-subtitle-color: #64748b;
+    --auth-label-color: #334155;
+
+    --auth-bg-input: #f8fafc;
+    --auth-border-input: #cbd5e1;
+    --auth-text-input: #0f172a;
+    --auth-placeholder: #94a3b8;
+    --auth-focus-border: #2563eb;
+    --auth-focus-shadow: rgba(37, 99, 235, 0.15);
+
+    --auth-btn-bg: #2563eb;
+    --auth-btn-hover: #1d4ed8;
+    --auth-btn-text: #ffffff;
+
+    --auth-link-color: #2563eb;
+    --auth-link-hover: #1d4ed8;
+}
+
+html[data-theme="dark"] {
+    --auth-bg-body: #0b0f19;
+    --auth-bg-card: #151e2e;
+    --auth-border-card: #243044;
+    --auth-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+
+    --auth-title-color: #f8fafc;
+    --auth-subtitle-color: #94a3b8;
+    --auth-label-color: #cbd5e1;
+
+    --auth-bg-input: #0f172a;
+    --auth-border-input: #334155;
+    --auth-text-input: #f8fafc;
+    --auth-placeholder: #64748b;
+    --auth-focus-border: #3b82f6;
+    --auth-focus-shadow: rgba(59, 130, 246, 0.25);
+
+    --auth-btn-bg: #2563eb;
+    --auth-btn-hover: #3b82f6;
+    --auth-btn-text: #ffffff;
+
+    --auth-link-color: #60a5fa;
+    --auth-link-hover: #93c5fd;
+}
+
+/* --------------------------------------------------------------------------
+   2. PAGE LAYOUT & MAIN CARD CONTAINER (.login-page, .login-card)
+   -------------------------------------------------------------------------- */
+body,
+.login-page {
+    background-color: var(--auth-bg-body) !important;
+    color: var(--auth-title-color) !important;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.login-card {
+    background-color: var(--auth-bg-card) !important;
+    border: 1px solid var(--auth-border-card) !important;
+    box-shadow: var(--auth-shadow) !important;
+    border-radius: 16px !important;
+    transition: all 0.3s ease;
+}
+
+/* --------------------------------------------------------------------------
+   3. HEADER & TYPOGRAPHY
+   -------------------------------------------------------------------------- */
+.login-header h1 {
+    color: var(--auth-title-color) !important;
+    font-weight: 700 !important;
+}
+
+.login-header p {
+    color: var(--auth-subtitle-color) !important;
+}
+
+.form-group label {
+    color: var(--auth-label-color) !important;
+    font-weight: 500 !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. FORM INPUTS & CHECKBOX
+   -------------------------------------------------------------------------- */
+.form-group input[type="text"],
+.form-group input[type="password"],
+.form-group input[type="email"] {
+    background-color: var(--auth-bg-input) !important;
+    border: 1px solid var(--auth-border-input) !important;
+    color: var(--auth-text-input) !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease;
+}
+
+.form-group input::placeholder {
+    color: var(--auth-placeholder) !important;
+}
+
+.form-group input:focus {
+    border-color: var(--auth-focus-border) !important;
+    box-shadow: 0 0 0 3px var(--auth-focus-shadow) !important;
+    outline: none !important;
+}
+
+/* Ghi nhớ đăng nhập Checkbox Row */
+.remember-row,
+.remember-row label {
+    color: var(--auth-subtitle-color) !important;
+    cursor: pointer;
+}
+
+.remember-row input[type="checkbox"] {
+    accent-color: var(--auth-btn-bg);
+}
+
+/* --------------------------------------------------------------------------
+   5. BUTTONS & FOOTER LINKS
+   -------------------------------------------------------------------------- */
+.login-btn,
+.btn-primary.login-btn {
+    background-color: var(--auth-btn-bg) !important;
+    border-color: var(--auth-btn-bg) !important;
+    color: var(--auth-btn-text) !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease;
+}
+
+.login-btn:hover,
+.btn-primary.login-btn:hover {
+    background-color: var(--auth-btn-hover) !important;
+    border-color: var(--auth-btn-hover) !important;
+}
+
+.login-footer a {
+    color: var(--auth-link-color) !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+    transition: color 0.2s ease;
+}
+
+.login-footer a:hover {
+    color: var(--auth-link-hover) !important;
+    text-decoration: underline !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. FLASH MESSAGES IN AUTH CARD
+   -------------------------------------------------------------------------- */
+html[data-theme="dark"] .alert-danger {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    color: #fca5a5 !important;
+}
+
+html[data-theme="dark"] .alert-success {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+    color: #6ee7b7 !important;
+}

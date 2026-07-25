@@ -1,0 +1,27 @@
+<div class="pagination">
+
+    {% if page > 1 %}
+        <a href="/employees?page={{ page-1 }}
+        &keyword={{ keyword }}
+        &department={{ department }}
+        &position={{ position }}
+        &status={{ status }}">
+            <- Trước
+        </a>
+    {% endif %}
+
+    <span>
+        Trang {{ page }} / {{ total_pages }}
+    </span>
+
+    {% if page < total_pages %}
+        <a href="/employees?page={{ page+1 }}
+        &keyword={{ keyword }}
+        &department={{ department }}
+        &position={{ position }}
+        &status={{ status }}">
+            Sau ->
+        </a>
+    {% endif %}
+
+</div>

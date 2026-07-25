@@ -1,0 +1,96 @@
+<script>
+const fromDate=document.querySelector('[name="from_date"]');
+const toDate=document.querySelector('[name="to_date"]');
+const total=document.getElementById("total_days");
+const today = new Date();
+today.setHours(0,0,0,0);
+function calculateDays(){
+
+    if(fromDate.value && toDate.value){
+
+        const start=new Date(fromDate.value);
+        const end=new Date(toDate.value);
+        if (start < today){
+            alert('Ngày bắt đầu nghỉ không được nhỏ hơn ngày hôm nay!');
+            fromDate.value='';
+            total.value='';
+            return;
+        }
+        if (end < start){
+            alert('Ngày kết thúc không được nhỏ hơn ngày bắt đầu!');
+            toDate.value='';
+            total.value='';
+            return;
+        }
+        const days=(end -start)/(1000*60*60*24)+1;
+        if (days > 30){
+            alert('Tổng số ngày nghỉ không được vượt quá 30 ngày!');
+            toDate.value='';
+            total.value='';
+            return;
+        }
+        if (days >= 1){
+            total.value=days;
+
+        } else{
+            total.value='';
+        }
+
+        ;
+
+    }
+
+}
+
+fromDate.addEventListener("change",calculateDays);
+toDate.addEventListener("change",calculateDays);
+
+calculateDays();
+
+</script>
+<script>
+
+const status=document.querySelector('[name="status"]');
+const reject=document.getElementById("reject_reason");
+const rejectSection =
+document.getElementById("reject_section");
+function toggleReject(){
+
+    if(status.value==="Từ chối"){
+
+        rejectSection.style.display='block';
+        reject.required=true;
+
+    }else{
+
+        rejectSection.style.display='none';
+        reject.required=false;
+        reject.value="";
+    }
+
+}
+
+status.addEventListener("change",toggleReject);
+
+toggleReject();
+const reason = document.getElementById("reason");
+
+reason.addEventListener("blur", function(){
+
+    reason.value = reason.value.trim();
+
+});
+const form = document.getElementById("leaveForm");
+
+form.addEventListener("submit", function(e){
+
+    if(total.value.trim() === ""){
+
+        alert("Vui lòng kiểm tra lại ngày nghỉ!");
+
+        e.preventDefault();
+
+    }
+
+});
+</script>

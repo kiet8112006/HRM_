@@ -1,0 +1,43 @@
+<form method="GET" class="card search-form">
+
+    <div class="search-group">
+        <input
+            class="form-control"
+            type="text"
+            name="keyword"
+            placeholder="Tên hoặc mã chức vụ..."
+            value="{{ keyword | e }}">
+    </div>
+
+    <!-- Bộ lọc trạng thái chức vụ -->
+    <select
+        class="form-control filter-select"
+        name="status">
+
+        <option value="">
+            Tất cả trạng thái
+        </option>
+
+        <option value="Hoạt động"
+            {% if status == "Hoạt động" %}
+            selected
+            {% endif %}>
+            Hoạt động
+        </option>
+
+        <option value="Ngừng hoạt động"
+            {% if status == "Ngừng hoạt động" %}
+            selected
+            {% endif %}>
+            Ngừng hoạt động
+        </option>
+
+    </select>
+
+    <button
+        class="btn btn-primary"
+        type="submit">
+        Tìm Kiếm
+    </button>
+
+</form>

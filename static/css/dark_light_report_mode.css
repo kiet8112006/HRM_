@@ -1,0 +1,191 @@
+/* ==========================================================================
+   HRM SYSTEM - REPORT PAGE DARK / LIGHT MODE COMPREHENSIVE
+   Đồng bộ hoàn toàn với static/js/theme.js (html[data-theme="dark" / "light"])
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. KHAI BÁO BIẾN MÀU SẮC (CSS VARIABLES FOR REPORT)
+   -------------------------------------------------------------------------- */
+:root,
+html[data-theme="light"] {
+    --report-bg-body: #f8fafc;
+    --report-bg-card: #ffffff;
+    --report-border-color: #e2e8f0;
+
+    --report-text-primary: #0f172a;
+    --report-text-secondary: #475569;
+    --report-text-muted: #64748b;
+
+    /* Inputs & Filters */
+    --report-input-bg: #f8fafc;
+    --report-input-border: #cbd5e1;
+    --report-input-text: #0f172a;
+
+    /* Table Colors */
+    --report-th-bg: #f1f5f9;
+    --report-tr-hover: #f8fafc;
+
+    /* KPI Backgrounds */
+    --kpi-bg: #ffffff;
+    --kpi-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+html[data-theme="dark"] {
+    --report-bg-body: #0b0f19;
+    --report-bg-card: #151e2e;
+    --report-border-color: #243044;
+
+    --report-text-primary: #f8fafc;
+    --report-text-secondary: #cbd5e1;
+    --report-text-muted: #94a3b8;
+
+    /* Inputs & Filters Dark Mode */
+    --report-input-bg: #0f172a;
+    --report-input-border: #334155;
+    --report-input-text: #f8fafc;
+
+    /* Table Colors Dark Mode */
+    --report-th-bg: #1e293b;
+    --report-tr-hover: #1c283c;
+
+    /* KPI Backgrounds Dark Mode */
+    --kpi-bg: #151e2e;
+    --kpi-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   2. GLOBAL BODY & LAYOUT OVERRIDES
+   -------------------------------------------------------------------------- */
+body {
+    background-color: var(--report-bg-body) !important;
+    color: var(--report-text-primary) !important;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.page-header h1 {
+    color: var(--report-text-primary) !important;
+}
+
+.page-header p {
+    color: var(--report-text-muted) !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. KHUNG BỘ LỌC (FILTER CARD & INPUTS)
+   -------------------------------------------------------------------------- */
+.filter-card {
+    background-color: var(--report-bg-card) !important;
+    border: 1px solid var(--report-border-color) !important;
+    border-radius: 12px !important;
+    box-shadow: var(--kpi-shadow) !important;
+}
+
+.filter-group label {
+    color: var(--report-text-secondary) !important;
+    font-weight: 500;
+}
+
+.filter-group input[type="date"],
+.filter-group select {
+    background-color: var(--report-input-bg) !important;
+    border: 1px solid var(--report-input-border) !important;
+    color: var(--report-input-text) !important;
+    border-radius: 8px !important;
+}
+
+.filter-group select option {
+    background-color: var(--report-bg-card) !important;
+    color: var(--report-text-primary) !important;
+}
+
+.btn-reset {
+    background-color: var(--report-input-bg) !important;
+    border: 1px solid var(--report-border-color) !important;
+    color: var(--report-text-secondary) !important;
+}
+
+html[data-theme="dark"] .btn-reset:hover {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. THẺ KPI DỮ LIỆU (.kpi-card)
+   -------------------------------------------------------------------------- */
+.kpi-card {
+    background-color: var(--kpi-bg) !important;
+    border: 1px solid var(--report-border-color) !important;
+    border-radius: 12px !important;
+    box-shadow: var(--kpi-shadow) !important;
+}
+
+.kpi-content span {
+    color: var(--report-text-muted) !important;
+}
+
+.kpi-content h2 {
+    color: var(--report-text-primary) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. BẢNG BÁO CÁO & BIỂU ĐỒ (.report-card, .report-table)
+   -------------------------------------------------------------------------- */
+.report-card {
+    background-color: var(--report-bg-card) !important;
+    border: 1px solid var(--report-border-color) !important;
+    border-radius: 12px !important;
+    box-shadow: var(--kpi-shadow) !important;
+}
+
+.report-card h2 {
+    color: var(--report-text-primary) !important;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.report-table th {
+    background-color: var(--report-th-bg) !important;
+    color: var(--report-text-secondary) !important;
+    border-bottom: 2px solid var(--report-border-color) !important;
+}
+
+.report-table td {
+    border-bottom: 1px solid var(--report-border-color) !important;
+    color: var(--report-text-primary) !important;
+}
+
+.report-table tr:hover td {
+    background-color: var(--report-tr-hover) !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. KHUNG BÁO LỖI KHÔNG CÓ QUYỀN TRUY CẬP (ACCESS DENIED)
+   -------------------------------------------------------------------------- */
+html[data-theme="dark"] div[style*="text-align: center; margin-top: 100px;"] {
+    background-color: #151e2e !important;
+    border: 1px solid #243044 !important;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5) !important;
+}
+
+html[data-theme="dark"] div[style*="text-align: center; margin-top: 100px;"] h2 {
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] div[style*="text-align: center; margin-top: 100px;"] p {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] div[style*="text-align: center; margin-top: 100px;"] a {
+    background-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] div[style*="text-align: center; margin-top: 100px;"] a:hover {
+    background-color: #475569 !important;
+}

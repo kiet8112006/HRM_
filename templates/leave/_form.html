@@ -1,0 +1,200 @@
+<form method="POST" class="form-card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-grid">
+
+        <!-- Mã đơn -->
+
+        <div class="form-group">
+
+            <label class="form-label">
+                Mã Đơn
+            </label>
+
+            <input
+                class="form-control"
+                type="text"
+                value="Tự động tạo"
+                readonly>
+
+        </div>
+
+        <!-- Nhân viên -->
+
+        <div class="form-group">
+
+            <label class="form-label">
+                Nhân Viên
+            </label>
+
+            <select
+                class="form-control"
+                name="employee_id"
+                required>
+
+                {% for emp in employees %}
+
+                <option value="{{ emp.EmployeeID }}">
+
+                    {{ emp.FullName }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+        <!-- Loại nghỉ -->
+
+        <div class="form-group">
+
+            <label class="form-label">
+                Loại Nghỉ
+            </label>
+
+            <select
+                class="form-control"
+                name="leave_type"
+                required>
+
+                <option value="">
+                    -- Chọn loại nghỉ --
+                </option>
+
+                <option value="Nghỉ phép năm">
+                    Nghỉ phép năm
+                </option>
+
+                <option value="Nghỉ bệnh">
+                    Nghỉ bệnh
+                </option>
+
+                <option value="Nghỉ không lương">
+                    Nghỉ không lương
+                </option>
+
+                <option value="Nghỉ thai sản">
+                    Nghỉ thai sản
+                </option>
+
+                <option value="Nghỉ việc riêng">
+                    Nghỉ việc riêng
+                </option>
+
+            </select>
+
+        </div>
+
+        <!-- Từ ngày -->
+
+        <div class="form-group">
+
+            <label class="form-label">
+                Từ Ngày
+            </label>
+
+            <input
+                class="form-control"
+                type="date"
+                name="from_date"
+                required>
+
+        </div>
+
+        <!-- Đến ngày -->
+
+        <div class="form-group">
+
+            <label class="form-label">
+                Đến Ngày
+            </label>
+
+            <input
+                class="form-control"
+                type="date"
+                name="to_date"
+                required>
+
+        </div>
+
+        <!-- Tổng số ngày -->
+
+        <div class="form-group">
+
+            <label class="form-label">
+                Tổng Số Ngày
+            </label>
+
+            <input
+                class="form-control"
+                type="number"
+                id="total_days"
+                readonly>
+
+        </div>
+
+        <!-- Trạng thái -->
+
+        <div class="form-group">
+
+            <label class="form-label">
+                Trạng Thái
+            </label>
+
+            <input
+                class="form-control"
+                type="text"
+                value="Chờ duyệt"
+                readonly>
+
+            <input
+                type="hidden"
+                name="status"
+                value="Chờ duyệt">
+
+        </div>
+
+        <!-- Lý do -->
+
+        <div class="form-group full">
+
+            <label class="form-label">
+                Lý Do
+            </label>
+
+            <textarea
+                class="form-control"
+                name="reason"
+                id="reason"
+                rows="4"
+                maxlength="255"
+                placeholder="Nhập lý do nghỉ phép..."
+                required></textarea>
+
+        </div>
+
+    </div>
+
+    <div class="form-actions">
+
+        <button
+            type="submit"
+            class="btn btn-primary">
+
+            ➕ Thêm Đơn
+
+        </button>
+
+        <a
+            href="{{ url_for('leave.leave_requests') }}"
+            class="btn btn-secondary">
+
+            ← Quay Lại
+
+        </a>
+
+    </div>
+
+</form>

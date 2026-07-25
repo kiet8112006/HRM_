@@ -1,0 +1,33 @@
+<div class="toolbar">
+    {% if session.get('role') in ['Admin', 'Manager'] %}
+    <a
+        href="{{ url_for('attendance.add_attendance') }}"
+        class="btn btn-success">
+        + Thêm Chấm Công
+    </a>
+    {% endif %}
+    {% if session.get('role') == 'Admin' %}
+    <button
+    type="submit"
+    form="bulk-delete-form"
+    id="delete-selected-btn"
+    class="btn btn-danger"
+    disabled>
+    Xóa đã chọn
+</button>{% endif %}
+    {% if session.get('role') in ['Admin', 'Manager'] %}
+    <a
+        href="{{ url_for('attendance.export_attendance_csv') }}"
+        class="btn btn-primary">
+        📄 Xuất CSV
+    </a>{% endif %}
+
+    <a
+        href="{{ url_for('dashboard.home') }}"
+        class="btn btn-secondary">
+
+        ← Dashboard
+
+    </a>
+
+</div>

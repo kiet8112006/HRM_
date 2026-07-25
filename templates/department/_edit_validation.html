@@ -1,0 +1,96 @@
+<script>
+
+document.querySelector('[name="department_code"]')
+.addEventListener("input", function(){
+
+    this.value = this.value.toUpperCase();
+
+});
+
+</script>
+<script>
+
+document.querySelector('[name="department_name"]')
+.addEventListener("blur", function(){
+
+    this.value = this.value
+        .trim()
+        .replace(/\s+/g," ");
+
+});
+
+</script>
+<script>
+document.querySelector("form").addEventListener("submit", function(e){
+
+    const departmentCode = document.querySelector("[name='department_code']").value.trim().toUpperCase();
+    const departmentName = document.querySelector("[name='department_name']").value.trim();
+    const description = document.querySelector("[name='description']").value.trim();
+    const location = document.querySelector("[name='location']").value.trim();
+    const status = document.querySelector("[name='status']").value;
+
+    // Mã phòng ban
+    if(departmentCode === ""){
+        alert("Mã phòng ban không được để trống!");
+        e.preventDefault();
+        return;
+    }
+
+    const codeRegex = /^[A-Z]{2,10}$/;
+
+    if(!codeRegex.test(departmentCode)){
+        alert("Mã phòng ban chỉ gồm 2-10 chữ in hoa!");
+        e.preventDefault();
+        return;
+    }
+
+    // Tên phòng ban
+    if(departmentName === ""){
+        alert("Tên phòng ban không được để trống!");
+        e.preventDefault();
+        return;
+    }
+
+    if(departmentName.length < 3){
+        alert("Tên phòng ban phải có ít nhất 3 ký tự!");
+        e.preventDefault();
+        return;
+    }
+
+    if(departmentName.length > 100){
+        alert("Tên phòng ban tối đa 100 ký tự!");
+        e.preventDefault();
+        return;
+    }
+
+    const nameRegex = /^[A-Za-zÀ-Ỹà-ỹ0-9\s\-&,()]+$/;
+
+    if(!nameRegex.test(departmentName)){
+        alert("Tên phòng ban không hợp lệ!");
+        e.preventDefault();
+        return;
+    }
+
+    // Mô tả
+    if(description.length > 255){
+        alert("Mô tả tối đa 255 ký tự!");
+        e.preventDefault();
+        return;
+    }
+
+    // Địa điểm
+    if(location.length > 100){
+        alert("Địa điểm tối đa 100 ký tự!");
+        e.preventDefault();
+        return;
+    }
+
+    // Trạng thái
+    if(status !== "Active" && status !== "Inactive"){
+        alert("Trạng thái không hợp lệ!");
+        e.preventDefault();
+        return;
+    }
+
+});
+</script>

@@ -1,0 +1,122 @@
+<form method="GET" class="card search-form">
+
+    <div class="search-group">
+
+        <input
+            class="form-control"
+            type="text"
+            name="keyword"
+            placeholder="Tên nhân viên..."
+            value="{{ keyword | e  }}">
+
+    </div>
+
+    <select
+        class="form-control filter-select"
+        name="status">
+
+        <option value="">
+            Tất cả trạng thái
+        </option>
+
+        <option
+            value="Chờ duyệt"
+            {% if status=="Chờ duyệt" %}
+            selected
+            {% endif %}>
+
+            Chờ duyệt
+
+        </option>
+
+        <option
+            value="Đã duyệt"
+            {% if status=="Đã duyệt" %}
+            selected
+            {% endif %}>
+
+            Đã duyệt
+
+        </option>
+
+        <option
+            value="Từ chối"
+            {% if status=="Từ chối" %}
+            selected
+            {% endif %}>
+
+            Từ chối
+
+        </option>
+
+    </select>
+
+    <select
+        class="form-control filter-select"
+        name="leave_type">
+
+        <option value="">
+            Tất cả loại nghỉ
+        </option>
+
+        <option
+            value="Nghỉ phép năm"
+            {% if leave_type=="Nghỉ phép năm" %}
+            selected
+            {% endif %}>
+
+            Nghỉ phép năm
+
+        </option>
+
+        <option
+            value="Nghỉ bệnh"
+            {% if leave_type=="Nghỉ bệnh" %}
+            selected
+            {% endif %}>
+
+            Nghỉ bệnh
+
+        </option>
+
+        <option
+            value="Nghỉ không lương"
+            {% if leave_type=="Nghỉ không lương" %}
+            selected
+            {% endif %}>
+
+            Nghỉ không lương
+
+        </option>
+
+        <option
+            value="Nghỉ thai sản"
+            {% if leave_type=="Nghỉ thai sản" %}
+            selected
+            {% endif %}>
+
+            Nghỉ thai sản
+
+        </option>
+
+        <option
+            value="Nghỉ việc riêng"
+            {% if leave_type=="Nghỉ việc riêng" %}
+            selected
+            {% endif %}>
+
+            Nghỉ việc riêng
+
+        </option>
+
+    </select>
+
+    <button
+        class="btn btn-primary"
+        type="submit">
+
+        Tìm Kiếm
+
+    </button>
+
+</form>

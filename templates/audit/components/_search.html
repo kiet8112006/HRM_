@@ -1,0 +1,48 @@
+<form method="GET" action="{{ url_for('audit.audit_logs') }}" class="audit-search-form">
+    <div class="search-grid">
+        <!-- Ô Tìm kiếm từ khóa -->
+        <div class="search-item input-with-icon">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input 
+                type="text" 
+                name="keyword" 
+                class="form-control" 
+                placeholder="Username, mô tả, IP..." 
+                value="{{ request.args.get('keyword', '') }}">
+        </div>
+
+        <!-- Dropdown Module -->
+        <div class="search-item">
+            <select name="module" class="form-select">
+                <option value="">-- Tất cả Module --</option>
+                {% for m in modules %}
+                <option value="{{ m }}" {% if request.args.get('module') == m %}selected{% endif %}>
+                    {{ m }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Dropdown Action -->
+        <div class="search-item">
+            <select name="action" class="form-select">
+                <option value="">-- Tất cả Action --</option>
+                {% for a in actions %}
+                <option value="{{ a }}" {% if request.args.get('action') == a %}selected{% endif %}>
+                    {{ a }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Nhóm Nút Thao Tác -->
+        <div class="search-actions">
+            <button type="submit" class="btn btn-search">
+                <i class="fa-solid fa-filter"></i> Tìm kiếm
+            </button>
+            <a href="{{ url_for('audit.audit_logs') }}" class="btn btn-reset" title="Đặt lại bộ lọc">
+                <i class="fa-solid fa-rotate-left"></i> Đặt lại
+            </a>
+        </div>
+    </div>
+</form>

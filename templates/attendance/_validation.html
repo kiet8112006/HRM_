@@ -1,0 +1,31 @@
+<script>
+
+document.querySelector("form").addEventListener("submit", function(e){
+const note =
+document.querySelector("[name='notes']").value;
+
+if(note.length > 255){
+
+    alert("Ghi chú tối đa 255 ký tự.");
+
+    e.preventDefault();
+
+}
+
+    const checkin =
+    document.querySelector("[name='checkin']").value;
+
+    const checkout =
+    document.querySelector("[name='checkout']").value;
+
+    if(checkout <= checkin){
+
+        alert("Giờ Check Out phải lớn hơn Check In.");
+
+        e.preventDefault();
+
+    }
+
+});
+
+</script>

@@ -1,0 +1,169 @@
+<div class="quick-actions">
+
+    <div class="quick-actions-header">
+
+        <h2 class="quick-actions-title">
+
+            <i class="fa-solid fa-chart-line"></i>
+
+            Thống kê nhanh
+
+        </h2>
+
+        <p class="quick-actions-subtitle">
+
+            Tổng quan các chỉ số quan trọng của hệ thống nhân sự.
+
+        </p>
+
+    </div>
+
+    <div class="stats-grid">
+
+        <!-- Hôm nay -->
+
+        <div class="stat-card">
+
+            <div class="stat-icon primary">
+
+                <i class="fa-solid fa-calendar-days"></i>
+
+            </div>
+
+            <div class="stat-content">
+
+                <div class="stat-title">
+
+                    Hôm nay
+
+                </div>
+
+                <div class="stat-value">
+
+                    {{ today }}
+
+                </div>
+
+                <div class="stat-description">
+
+                    Ngày làm việc hiện tại
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Nhân viên mới -->
+
+        <div class="stat-card">
+
+            <div class="stat-icon success">
+
+                <i class="fa-solid fa-user-plus"></i>
+
+            </div>
+
+            <div class="stat-content">
+
+                <div class="stat-title">
+
+                    Nhân viên mới
+
+                </div>
+
+                <div class="stat-value">
+
+                    {{ new_employees }}
+
+                </div>
+
+                <div class="stat-description">
+
+                    Tuyển trong tháng này
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Đơn chờ duyệt -->
+
+        <div class="stat-card">
+
+            <div class="stat-icon warning">
+
+                <i class="fa-solid fa-calendar-check"></i>
+
+            </div>
+
+            <div class="stat-content">
+
+                <div class="stat-title">
+
+                    Đơn chờ duyệt
+
+                </div>
+
+                <div class="stat-value">
+
+                    {{ leave_today }}
+
+                </div>
+
+                <div class="stat-description">
+
+                    Đơn nghỉ phép đang chờ xử lý
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Quỹ lương -->
+
+        <div class="stat-card">
+
+            <div class="stat-icon danger">
+
+                <i class="fa-solid fa-money-bill-wave"></i>
+
+            </div>
+
+            <div class="stat-content">
+
+                <div class="stat-title">
+
+                    Quỹ lương tháng này
+
+                </div>
+
+                <div class="stat-value">
+
+                    {{salary_this_month}}
+
+                </div>
+
+                <div class="stat-description">
+
+                    {% if salary_growth >= 0 %}
+
+                        Tăng {{ salary_growth }}% so với tháng trước
+
+                    {% else %}
+
+                        Giảm {{ salary_growth|abs }}% so với tháng trước
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

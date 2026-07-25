@@ -1,0 +1,141 @@
+<form method="POST" class="form-card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-grid">
+
+        <div class="form-group">
+            <label class="form-label">Nhân Viên</label>
+
+            <select
+                class="form-control"
+                name="employee_id"
+                required>
+
+                {% for emp in employees %}
+
+                <option
+                    value="{{ emp.EmployeeID }}"
+                    {% if emp.EmployeeID == attendance.EmployeeID %}selected{% endif %}>
+
+                    {{ emp.FullName }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Ngày</label>
+
+            <input
+                class="form-control"
+                type="date"
+                name="date"
+                value="{{ attendance.Date }}"
+                max="{{ today }}"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Check In</label>
+
+            <input
+                class="form-control"
+                type="time"
+                name="checkin"
+                value="{{ attendance.CheckInTime }}"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Check Out</label>
+
+            <input
+                class="form-control"
+                type="time"
+                name="checkout"
+                value="{{ attendance.CheckOutTime }}"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Phương Thức Chấm Công</label>
+
+            <select
+                class="form-control"
+                name="checkin_method"
+                required>
+
+                <option value="FaceID" {% if attendance.CheckInMethod=="FaceID" %}selected{% endif %}>FaceID</option>
+                <option value="Fingerprint" {% if attendance.CheckInMethod=="Fingerprint" %}selected{% endif %}>Vân tay</option>
+                <option value="QR Code" {% if attendance.CheckInMethod=="QR Code" %}selected{% endif %}>QR Code</option>
+                <option value="GPS" {% if attendance.CheckInMethod=="GPS" %}selected{% endif %}>GPS</option>
+                <option value="Manual" {% if attendance.CheckInMethod=="Manual" %}selected{% endif %}>Thủ công</option>
+
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Trạng Thái</label>
+
+            <select
+                class="form-control"
+                name="status">
+
+                <option value="Có mặt" {% if attendance.Status=="Có mặt" %}selected{% endif %}>Có mặt</option>
+                <option value="Đi trễ" {% if attendance.Status=="Đi trễ" %}selected{% endif %}>Đi trễ</option>
+                <option value="Vắng" {% if attendance.Status=="Vắng" %}selected{% endif %}>Vắng</option>
+
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Trạng Thái Duyệt</label>
+
+            <select
+                class="form-control"
+                name="approval_status">
+
+                <option value="Chờ duyệt" {% if attendance.ApprovalStatus=="Chờ duyệt" %}selected{% endif %}>Chờ duyệt</option>
+                <option value="Đã duyệt" {% if attendance.ApprovalStatus=="Đã duyệt" %}selected{% endif %}>Đã duyệt</option>
+
+            </select>
+        </div>
+
+        <div class="form-group" style="grid-column:1 / -1;">
+
+            <label class="form-label">Ghi Chú</label>
+
+            <textarea
+                class="form-control"
+                name="notes"
+                rows="5"
+                maxlength="255">{{ attendance.Notes }}</textarea>
+
+        </div>
+
+    </div>
+
+    <div class="form-actions">
+
+        <button
+            type="submit"
+            class="btn btn-primary">
+
+            💾 Cập Nhật
+
+        </button>
+
+        <a
+            href="{{ url_for('attendance.attendance') }}"
+            class="btn btn-secondary">
+
+            ← Quay lại
+
+        </a>
+
+    </div>
+
+</form>

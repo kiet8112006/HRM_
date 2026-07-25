@@ -1,0 +1,35 @@
+<div class="pagination">
+
+    {% if page > 1 %}
+
+    <a href="/audit_logs?page={{ page-1 }}
+        &keyword={{ keyword }}
+        &module={{ module }}
+        &action={{ action }}">
+
+        ← Trước
+
+    </a>
+
+    {% endif %}
+
+    <span>
+
+        Trang {{ page }} / {{ total_pages }}
+
+    </span>
+
+    {% if page < total_pages %}
+
+    <a href="/audit_logs?page={{ page+1 }}
+        &keyword={{ keyword }}
+        &module={{ module }}
+        &action={{ action }}">
+
+        Sau →
+
+    </a>
+
+    {% endif %}
+
+</div>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông Báo Hệ Thống - HRM System</title>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- CSS Hệ Thống & CSS Chuyên Biệt -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notification.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/dark_light_notification_mode.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- Header Trang -->
+    <div class="page-header">
+        <div class="header-title">
+            <h1>
+                <div class="header-icon-box">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+                <span>Thông Báo Hệ Thống</span>
+            </h1>
+            <p class="sub-title">
+                Bạn có <span class="unread-pill">{{ unread_count }} chưa đọc</span> trong tổng số thông báo hệ thống.
+            </p>
+        </div>
+
+        <div class="header-actions">
+            <a href="{{ url_for('notification.read_all_notifications') }}" class="btn btn-primary">
+                <i class="fa-solid fa-check-double"></i> Đánh dấu tất cả đã đọc
+            </a>
+            <a href="{{ url_for('dashboard.home') }}" class="btn btn-secondary">
+                <i class="fa-solid fa-house"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    {% include "components/_flash.html" %}
+
+    <!-- Card Bảng Thông Báo -->
+    <div class="card table-card">
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Tiêu đề</th>
+                        <th style="width: 40%;">Nội dung</th>
+                        <th style="width: 12%;">Loại</th>
+                        <th style="width: 13%;">Thời gian</th>
+                        <th style="width: 10%; text-align: center;">Thao tác</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% if notifications %}
+                        {% for n in notifications %}
+                        <tr class="{% if n.IsRead == 0 %}unread-row{% endif %}">
+                            <!-- Tiêu đề -->
+                            <td>
+                                <div class="notification-title-cell">
+                                    {% if n.IsRead == 0 %}
+                                        <span class="dot-unread" title="Chưa đọc"></span>
+                                    {% endif %}
+                                    <span class="title-text">{{ n.Title }}</span>
+                                </div>
+                            </td>
+
+                            <!-- Nội dung -->
+                            <td>
+                                <p class="message-text">{{ n.Message }}</p>
+                            </td>
+
+                            <!-- Loại thông báo -->
+                            <td>
+                                {% if n.Type == 'Success' %}
+                                    <span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> {{ n.Type }}</span>
+                                {% elif n.Type == 'Warning' %}
+                                    <span class="badge badge-warning"><i class="fa-solid fa-triangle-exclamation"></i> {{ n.Type }}</span>
+                                {% elif n.Type == 'Error' %}
+                                    <span class="badge badge-danger"><i class="fa-solid fa-circle-xmark"></i> {{ n.Type }}</span>
+                                {% else %}
+                                    <span class="badge badge-info"><i class="fa-solid fa-circle-info"></i> {{ n.Type }}</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Thời gian -->
+                            <td>
+                                <span class="time-text"><i class="fa-regular fa-clock"></i> {{ n.TimeAgo }}</span>
+                            </td>
+
+                            <!-- Thao tác -->
+                            <td style="text-align: center;">
+                                {% if n.IsRead == 0 %}
+                                    <a href="{{ url_for('notification.read_notification', id=n.NotificationID) }}" 
+                                       class="btn-action-read" 
+                                       title="Đánh dấu đã đọc">
+                                        <i class="fa-solid fa-check"></i> Đọc
+                                    </a>
+                                {% else %}
+                                    <span class="read-done"><i class="fa-solid fa-check-double"></i> Đã đọc</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="empty-table">
+                                <div class="empty-state-box">
+                                    <i class="fa-regular fa-bell-slash"></i>
+                                    <h3>Chưa có thông báo nào</h3>
+                                    <p>Hệ thống hiện tại chưa ghi nhận thông báo mới.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+</body>
+</html>

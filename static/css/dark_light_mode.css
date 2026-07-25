@@ -1,0 +1,842 @@
+/* ==========================================================================
+   HRM SYSTEM - DARK / LIGHT MODE COMPREHENSIVE STYLESHEET
+   Đồng bộ hoàn toàn với static/js/theme.js (html.dataset.theme = 'dark' / 'light')
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. KHAI BÁO BIẾN MÀU SẮC (CSS VARIABLES)
+   -------------------------------------------------------------------------- */
+:root,
+html[data-theme="light"] {
+    /* Main Backgrounds */
+    --bg-body: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-sidebar: #0f172a;
+    --bg-header: #ffffff;
+    --bg-input: #ffffff;
+    --bg-hover: #f1f5f9;
+    --bg-table-header: #f8fafc;
+    --bg-table-row-hover: #f8fafc;
+    --bg-modal-overlay: rgba(15, 23, 42, 0.6);
+
+    /* Text Colors */
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --text-placeholder: #94a3b8;
+    --text-inverse: #ffffff;
+
+    /* Primary Accent Colors */
+    --primary-main: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-light: #eff6ff;
+
+    /* Component & Border Styling */
+    --border-color: #e2e8f0;
+    --border-input: #cbd5e1;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+
+    /* Status & Badges */
+    --success-bg: #d1fae5;
+    --success-text: #065f46;
+    --danger-bg: #fee2e2;
+    --danger-text: #991b1b;
+    --warning-bg: #fef3c7;
+    --warning-text: #92400e;
+    --info-bg: #e0f2fe;
+    --info-text: #075985;
+}
+
+html[data-theme="dark"] {
+    /* Main Backgrounds */
+    --bg-body: #0b0f19;
+    --bg-card: #151e2e;
+    --bg-sidebar: #0f172a;
+    --bg-header: #151e2e;
+    --bg-input: #0f172a;
+    --bg-hover: #1e293b;
+    --bg-table-header: #1e293b;
+    --bg-table-row-hover: #1c283c;
+    --bg-modal-overlay: rgba(0, 0, 0, 0.75);
+
+    /* Text Colors */
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    --text-placeholder: #64748b;
+    --text-inverse: #0f172a;
+
+    /* Primary Accent Colors */
+    --primary-main: #3b82f6;
+    --primary-hover: #60a5fa;
+    --primary-light: rgba(59, 130, 246, 0.15);
+
+    /* Component & Border Styling */
+    --border-color: #243044;
+    --border-input: #334155;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+
+    /* Status & Badges Dark Mode */
+    --success-bg: rgba(16, 185, 129, 0.2);
+    --success-text: #6ee7b7;
+    --danger-bg: rgba(239, 68, 68, 0.2);
+    --danger-text: #fca5a5;
+    --warning-bg: rgba(245, 158, 11, 0.2);
+    --warning-text: #fcd34d;
+    --info-bg: rgba(14, 165, 233, 0.2);
+    --info-text: #7dd3fc;
+}
+
+/* --------------------------------------------------------------------------
+   2. GLOBAL BASE STYLES
+   -------------------------------------------------------------------------- */
+body {
+    background-color: var(--bg-body) !important;
+    color: var(--text-primary) !important;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.app-wrapper,
+.app-main,
+.app-content,
+.dashboard-container,
+.container {
+    background-color: transparent !important;
+    color: var(--text-primary);
+}
+
+/* Typography Base */
+h1, h2, h3, h4, h5, h6,
+.title, .page-title, .section-title, .card-title {
+    color: var(--text-primary) !important;
+}
+
+p, .sub-title, .subtitle, .description {
+    color: var(--text-muted) !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. DASHBOARD MAIN & LAYOUT SPECIFIC OVERRIDES
+   -------------------------------------------------------------------------- */
+html[data-theme="dark"] .app-main,
+html[data-theme="dark"] .app-wrapper,
+html[data-theme="dark"] .app-content,
+html[data-theme="dark"] body {
+    background-color: #0b0f19 !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. SIDEBAR FOOTER & ADMIN DROPDOWN (Cụm "Quản trị viên")
+   -------------------------------------------------------------------------- */
+html[data-theme="dark"] .sidebar-footer,
+html[data-theme="dark"] .sidebar-user,
+html[data-theme="dark"] .admin-dropdown,
+html[data-theme="dark"] .sidebar-dropdown-toggle,
+html[data-theme="dark"] .sidebar-footer-btn {
+    background-color: #0f172a !important;
+    border-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .sidebar-user:hover,
+html[data-theme="dark"] .sidebar-dropdown-toggle:hover {
+    background-color: #1e293b !important;
+}
+
+html[data-theme="dark"] .sidebar-name,
+html[data-theme="dark"] .sidebar-user-name,
+html[data-theme="dark"] .user-name {
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .sidebar-role,
+html[data-theme="dark"] .sidebar-user-role,
+html[data-theme="dark"] .user-role {
+    color: #94a3b8 !important;
+}
+
+/* Dropdown Menu Admin */
+html[data-theme="dark"] .sidebar-dropdown-menu,
+html[data-theme="dark"] .dropdown-menu {
+    background-color: #151e2e !important;
+    border-color: #243044 !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+}
+
+html[data-theme="dark"] .dropdown-item,
+html[data-theme="dark"] .sidebar-submenu-link {
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .dropdown-item:hover,
+html[data-theme="dark"] .sidebar-submenu-link:hover {
+    background-color: #1e293b !important;
+    color: #3b82f6 !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. CARDS, KPI BOXES & CHARTS CONTAINER (Khu vực bên phải)
+   -------------------------------------------------------------------------- */
+.card,
+.kpi-card,
+.stat-card,
+.chart-card,
+.table-card,
+.quick-stats-card,
+.dashboard-card,
+.dashboard-section,
+.form-card,
+.report-card,
+.filter-card,
+.login-card {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+    box-shadow: var(--shadow-md);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Ép cứng màu thẻ KPI & Biểu đồ khi ở Dark Mode */
+html[data-theme="dark"] .kpi-card,
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .chart-card,
+html[data-theme="dark"] .dashboard-section,
+html[data-theme="dark"] .quick-stats-card,
+html[data-theme="dark"] .card {
+    background-color: #151e2e !important;
+    border-color: #243044 !important;
+}
+
+html[data-theme="dark"] .kpi-title,
+html[data-theme="dark"] .kpi-value,
+html[data-theme="dark"] .stat-value,
+html[data-theme="dark"] .chart-title,
+html[data-theme="dark"] .card-header {
+    color: #ffffff !important;
+}
+
+html[data-theme="dark"] .kpi-subtext,
+html[data-theme="dark"] .stat-label,
+html[data-theme="dark"] .chart-subtitle {
+    color: #94a3b8 !important;
+}
+
+/* Date Badge Top Header (vd: "Thứ Tư, 22/07/2026") */
+html[data-theme="dark"] .date-badge,
+html[data-theme="dark"] .header-date,
+html[data-theme="dark"] .today-badge {
+    background-color: #1e293b !important;
+    color: #93c5fd !important;
+    border: 1px solid #334155 !important;
+}
+
+/* Header & Header Icons */
+.page-header,
+.dashboard-header,
+.login-header {
+    border-bottom-color: var(--border-color) !important;
+}
+
+.header-icon-box,
+.icon-shape {
+    background-color: var(--primary-light) !important;
+    color: var(--primary-main) !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. FORM CONTROLS & INPUTS
+   -------------------------------------------------------------------------- */
+.form-control,
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="date"],
+select,
+textarea {
+    background-color: var(--bg-input) !important;
+    border: 1px solid var(--border-input) !important;
+    color: var(--text-primary) !important;
+    transition: all 0.2s ease;
+}
+
+.form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: var(--text-placeholder) !important;
+}
+
+.form-control:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--primary-main) !important;
+    box-shadow: 0 0 0 3px var(--primary-light) !important;
+}
+
+.form-label,
+label {
+    color: var(--text-secondary) !important;
+}
+
+option {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. TABLES & DATA LISTS
+   -------------------------------------------------------------------------- */
+.table-wrapper,
+.table-responsive {
+    background-color: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+}
+
+.table,
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: var(--text-primary) !important;
+}
+
+.table th,
+.report-table th {
+    background-color: var(--bg-table-header) !important;
+    color: var(--text-secondary) !important;
+    border-bottom: 2px solid var(--border-color) !important;
+}
+
+.table td,
+.report-table td {
+    border-bottom: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.table tr:hover,
+.report-table tr:hover {
+    background-color: var(--bg-table-row-hover) !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. BADGES, ALERTS & FLASH MESSAGES
+   -------------------------------------------------------------------------- */
+.badge,
+.alert {
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.badge-success, .alert-success {
+    background-color: var(--success-bg) !important;
+    color: var(--success-text) !important;
+}
+
+.badge-danger, .alert-danger {
+    background-color: var(--danger-bg) !important;
+    color: var(--danger-text) !important;
+}
+
+.badge-warning, .alert-warning {
+    background-color: var(--warning-bg) !important;
+    color: var(--warning-text) !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. BUTTONS & ACTIONS
+   -------------------------------------------------------------------------- */
+.btn-primary, .btn-search {
+    background-color: var(--primary-main) !important;
+    border-color: var(--primary-main) !important;
+    color: #ffffff !important;
+}
+
+.btn-primary:hover, .btn-search:hover {
+    background-color: var(--primary-hover) !important;
+}
+
+.btn-secondary, .btn-reset {
+    background-color: var(--bg-hover) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-secondary) !important;
+}
+
+.btn-secondary:hover, .btn-reset:hover {
+    background-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. MODAL & OVERLAY
+   -------------------------------------------------------------------------- */
+.modal-content {
+    background-color: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.image-modal, .modal-backdrop {
+    background-color: var(--bg-modal-overlay) !important;
+}
+/* ==========================================================================
+   FORCE DARK MODE FOR SIDEBAR & ALL SIDEBAR ELEMENTS
+   ========================================================================== */
+
+html[data-theme="dark"] .sidebar,
+html[data-theme="dark"] aside,
+html[data-theme="dark"] #sidebar {
+    background-color: #0f172a !important;
+    background: #0f172a !important;
+    border-right-color: #1e293b !important;
+}
+
+/* Header Logo trong Sidebar */
+html[data-theme="dark"] .sidebar-header,
+html[data-theme="dark"] .sidebar-logo {
+    background-color: #0f172a !important;
+}
+
+html[data-theme="dark"] .sidebar-brand-name {
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .sidebar-brand-sub {
+    color: #94a3b8 !important;
+}
+
+/* Các Nút Menu / Link trong Sidebar */
+html[data-theme="dark"] .sidebar-link {
+    color: #cbd5e1 !important;
+    background-color: transparent !important;
+}
+
+html[data-theme="dark"] .sidebar-link:hover {
+    background-color: #1e293b !important;
+    color: #60a5fa !important;
+}
+
+html[data-theme="dark"] .sidebar-link.active {
+    background-color: #1d4ed8 !important;
+    color: #ffffff !important;
+}
+
+html[data-theme="dark"] .sidebar-icon {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .sidebar-link:hover .sidebar-icon,
+html[data-theme="dark"] .sidebar-link.active .sidebar-icon {
+    color: #ffffff !important;
+}
+
+html[data-theme="dark"] .sidebar-group-title {
+    color: #64748b !important;
+}
+/* ==========================================================================
+   TỐI ƯU ADMIN DROPDOWN POPUP ("QUẢN TRỊ VIÊN") - DARK & LIGHT MODE
+   ========================================================================== */
+
+/* 1. Khung Popup Menu tổng */
+.sidebar-dropdown-menu {
+    background-color: var(--bg-card, #ffffff) !important;
+    border: 1px solid var(--border-color, #e2e8f0) !important;
+    border-radius: 12px !important;
+    padding: 8px !important;
+    box-shadow: var(--shadow-lg, 0 10px 25px -5px rgba(0, 0, 0, 0.2)) !important;
+}
+
+html[data-theme="dark"] .sidebar-dropdown-menu {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* 2. Các dòng Link/Nút bên trong Submenu */
+.sidebar-submenu-link {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    padding: 10px 12px !important;
+    border-radius: 8px !important;
+    font-size: 13.5px !important;
+    font-weight: 500 !important;
+    color: #334155 !important;
+    background-color: transparent !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+}
+
+/* Fix chữ & icon khi ở Dark Mode */
+html[data-theme="dark"] .sidebar-submenu-link {
+    color: #cbd5e1 !important;
+}
+
+/* Hover chung cho các mục trong menu */
+.sidebar-submenu-link:hover {
+    background-color: #f1f5f9 !important;
+    color: #2563eb !important;
+}
+
+html[data-theme="dark"] .sidebar-submenu-link:hover {
+    background-color: #334155 !important;
+    color: #60a5fa !important;
+}
+
+/* 3. ĐẶC TRỊ NÚT TOGGLE THEME (DARK / LIGHT MODE BUTTON) */
+.theme-toggle {
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .theme-toggle {
+    background-color: #0f172a !important;
+    border: 1px solid #334155 !important;
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .theme-toggle:hover {
+    background-color: #1e293b !important;
+    border-color: #3b82f6 !important;
+    color: #60a5fa !important;
+}
+
+/* Icon và Chữ bên trong nút Theme */
+.theme-toggle i,
+.theme-toggle span {
+    color: inherit !important;
+}
+
+/* 4. Nút Đăng xuất (Warning / Danger highlight) */
+.sidebar-submenu-link.logout-btn {
+    color: #ef4444 !important;
+}
+
+.sidebar-submenu-link.logout-btn:hover {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+    color: #dc2626 !important;
+}
+
+html[data-theme="dark"] .sidebar-submenu-link.logout-btn:hover {
+    background-color: rgba(239, 68, 68, 0.2) !important;
+    color: #fca5a5 !important;
+}
+/* ==========================================================================
+   CUSTOM SCROLLBAR (THANH CUỘN DOC/NGANG) CHO SIDEBAR & DỰ ÁN
+   ========================================================================== */
+
+/* 1. Độ rộng & cao của thanh cuộn */
+.sidebar::-webkit-scrollbar,
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+/* 2. Track (Phần nền đường ray cuộn) */
+.sidebar::-webkit-scrollbar-track,
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* 3. Thumb (Thanh trượt cuộn) ở Light Mode */
+.sidebar::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* 4. Thumb (Thanh trượt cuộn) ở Dark Mode */
+html[data-theme="dark"] .sidebar::-webkit-scrollbar-thumb,
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: #334155 !important;
+    border-radius: 10px !important;
+}
+
+html[data-theme="dark"] .sidebar::-webkit-scrollbar-thumb:hover,
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: #475569 !important;
+}
+
+/* Tự động ẩn thanh cuộn ngang không cần thiết */
+.sidebar {
+    overflow-x: hidden !important;
+}
+/* ==========================================================================
+   FIX FOOTER / BẢNG CHÚ THÍCH DƯỚI MỖI CHART TRONG DASHBOARD
+   ========================================================================== */
+
+/* Ép màu nền tối & chữ sáng cho chân trang của các Card Chart */
+html[data-theme="dark"] .chart-card-footer,
+html[data-theme="dark"] .chart-footer,
+html[data-theme="dark"] .card-footer,
+html[data-theme="dark"] .dashboard-card-footer,
+html[data-theme="dark"] div[class*="footer"] {
+    background-color: #1e293b !important;
+    border-top: 1px solid #334155 !important;
+    color: #94a3b8 !important;
+}
+
+/* Fix chữ chú thích bên trong footer */
+html[data-theme="dark"] .chart-card-footer span,
+html[data-theme="dark"] .chart-footer span,
+html[data-theme="dark"] .card-footer span,
+html[data-theme="dark"] div[class*="footer"] p,
+html[data-theme="dark"] div[class*="footer"] span {
+    color: #cbd5e1 !important;
+}
+/* ==========================================================================
+   FIX HEADER CARD & SECTION THỐNG KÊ NHANH TRONG DASHBOARD
+   ========================================================================== */
+
+/* 1. Header các bảng (Hợp đồng, Đơn nghỉ phép, Thống kê nhanh,...) */
+html[data-theme="dark"] .card-header,
+html[data-theme="dark"] .table-card-header,
+html[data-theme="dark"] .dashboard-section-header,
+html[data-theme="dark"] div[class*="header"] {
+    background-color: #151e2e !important;
+    border-bottom: 1px solid #243044 !important;
+}
+
+/* Fix tiêu đề & mô tả trong Header card */
+html[data-theme="dark"] .card-header h2,
+html[data-theme="dark"] .card-header h3,
+html[data-theme="dark"] .card-header h4,
+html[data-theme="dark"] .card-title,
+html[data-theme="dark"] div[class*="header"] h2,
+html[data-theme="dark"] div[class*="header"] h3 {
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .card-header p,
+html[data-theme="dark"] .card-subtitle,
+html[data-theme="dark"] div[class*="header"] p {
+    color: #94a3b8 !important;
+}
+
+/* 2. Khung bao bên ngoài của phần Thống kê nhanh & Các Card lớn */
+html[data-theme="dark"] .quick-stats,
+html[data-theme="dark"] .quick-stats-section,
+html[data-theme="dark"] .dashboard-section,
+html[data-theme="dark"] .section-card {
+    background-color: #151e2e !important;
+    border: 1px solid #243044 !important;
+}
+
+/* 3. Các ô nhỏ bên trong Thống kê nhanh */
+html[data-theme="dark"] .quick-stat-box,
+html[data-theme="dark"] .stat-item,
+html[data-theme="dark"] .quick-stats-card .stat-card {
+    background-color: #0f172a !important;
+    border: 1px solid #1e293b !important;
+}
+/* ==========================================================================
+   TRIỆT HẠ HOÀN TOÀN TẤT CẢ VỆT TRẮNG CÒN SÓT LẠI TRONG DASHBOARD
+   ========================================================================== */
+
+/* 1. Ép màu nền tối cho TẤT CẢ các thẻ Card, Table, Section và các phần tử con */
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .card-header,
+html[data-theme="dark"] .card-body,
+html[data-theme="dark"] .card-footer,
+html[data-theme="dark"] .dashboard-section,
+html[data-theme="dark"] .quick-stats,
+html[data-theme="dark"] .table-wrapper,
+html[data-theme="dark"] .table-container,
+html[data-theme="dark"] div[class*="card"],
+html[data-theme="dark"] section[class*="section"] {
+    background-color: #151e2e !important;
+    background: #151e2e !important;
+    border-color: #243044 !important;
+}
+
+/* 2. Sửa màu chữ tiêu đề & mô tả trong Header (Hợp đồng, Đơn nghỉ phép, Thống kê) */
+html[data-theme="dark"] .card-header *,
+html[data-theme="dark"] div[class*="header"] *,
+html[data-theme="dark"] .section-header * {
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .card-header p,
+html[data-theme="dark"] .card-header span,
+html[data-theme="dark"] div[class*="header"] p,
+html[data-theme="dark"] div[class*="header"] span {
+    color: #94a3b8 !important;
+}
+
+/* 3. Fix màu nền cho khoảng trống bên trong Bảng (Table Body & Rows) */
+html[data-theme="dark"] table,
+html[data-theme="dark"] tbody,
+html[data-theme="dark"] tr,
+html[data-theme="dark"] td {
+    background-color: #151e2e !important;
+    background: #151e2e !important;
+    color: #f8fafc !important;
+    border-color: #243044 !important;
+}
+
+/* 4. Fix các ô nhỏ trong Thống kê nhanh */
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .quick-stat-box,
+html[data-theme="dark"] div[class*="stat-box"] {
+    background-color: #0f172a !important;
+    background: #0f172a !important;
+    border: 1px solid #1e293b !important;
+}
+/* ==========================================================================
+   FIX 4 ĐIỂM CUỐI CÙNG: SIDEBAR TOGGLE, KHUNG THỐNG KÊ, TIÊU ĐỀ & TABLE GAP
+   ========================================================================== */
+
+/* 1. Nút 3 gạch Toggle Sidebar ở góc trên bên trái */
+html[data-theme="dark"] .sidebar-toggle,
+html[data-theme="dark"] #sidebarToggle {
+    background-color: #1e293b !important;
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .sidebar-toggle:hover,
+html[data-theme="dark"] #sidebarToggle:hover {
+    background-color: #334155 !important;
+    color: #60a5fa !important;
+}
+
+/* 2. Khung viền ngoài bao bọc phần "Thống kê nhanh" & các Section */
+html[data-theme="dark"] .dashboard-section,
+html[data-theme="dark"] .quick-stats,
+html[data-theme="dark"] .quick-stats-container,
+html[data-theme="dark"] .quick-stats-wrapper,
+html[data-theme="dark"] section {
+    background-color: #151e2e !important;
+    background: #151e2e !important;
+    border-color: #243044 !important;
+}
+
+/* 3. Ép sáng màu chữ tiêu đề & mô tả (Hợp đồng, Nghỉ phép, Thống kê) */
+html[data-theme="dark"] .dashboard-section h1,
+html[data-theme="dark"] .dashboard-section h2,
+html[data-theme="dark"] .dashboard-section h3,
+html[data-theme="dark"] .dashboard-section h4,
+html[data-theme="dark"] .card-title,
+html[data-theme="dark"] .section-title {
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .dashboard-section p,
+html[data-theme="dark"] .card-subtitle,
+html[data-theme="dark"] .section-subtitle {
+    color: #94a3b8 !important;
+}
+
+/* 4. Xóa vệt trắng khoảng trống dưới bảng & Card Body */
+html[data-theme="dark"] .card-body,
+html[data-theme="dark"] .table-responsive,
+html[data-theme="dark"] .table-wrapper {
+    background-color: #151e2e !important;
+    background: #151e2e !important;
+}
+/* ==========================================================================
+   FIX DỨT ĐIỂM VIỀN TRẮNG QUICK ACTIONS & BẢNG DASHBOARD
+   ========================================================================== */
+
+/* 1. Đặc trị class .quick-actions & .stats-grid trong file _quick_stats.html */
+html[data-theme="dark"] .quick-actions,
+html[data-theme="dark"] .quick-actions-header,
+html[data-theme="dark"] .stats-grid {
+    background-color: #151e2e !important;
+    background: #151e2e !important;
+    border-color: #243044 !important;
+}
+
+/* Fix chữ tiêu đề & sub trong Quick Actions */
+html[data-theme="dark"] .quick-actions-title {
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .quick-actions-subtitle {
+    color: #94a3b8 !important;
+}
+
+/* 2. Xóa viền trắng & khoảng trống ở các Bảng (Tables Card) */
+html[data-theme="dark"] .table-card,
+html[data-theme="dark"] .table-container,
+html[data-theme="dark"] .table-responsive,
+html[data-theme="dark"] .dashboard-section .card,
+html[data-theme="dark"] .dashboard-section > div {
+    background-color: #151e2e !important;
+    background: #151e2e !important;
+    border-color: #243044 !important;
+}
+
+/* 3. Ép màu tối cho tất cả các thẻ div chứa bảng & khoảng trắng trống */
+html[data-theme="dark"] .table-card *,
+html[data-theme="dark"] .table-container * {
+    border-color: #243044 !important;
+}
+/* ==========================================================================
+   FIX Ô NGÀY THÁNG TRÊN HEADER DASHBOARD (VD: "Thứ Tư, 22/07/2026")
+   ========================================================================== */
+
+/* Fix ô ngày tháng ở góc trên bên phải */
+html[data-theme="dark"] .header-date,
+html[data-theme="dark"] .date-badge,
+html[data-theme="dark"] .today-badge,
+html[data-theme="dark"] .dashboard-header-date,
+html[data-theme="dark"] div[class*="date"] {
+    background-color: #1e293b !important;
+    background: #1e293b !important;
+    color: #60a5fa !important;
+    border: 1px solid #334155 !important;
+}
+
+/* Ép tất cả icon và chữ bên trong ô ngày tháng đổi sang màu xanh sáng */
+html[data-theme="dark"] .header-date *,
+html[data-theme="dark"] .date-badge *,
+html[data-theme="dark"] .today-badge *,
+html[data-theme="dark"] div[class*="date"] * {
+    color: #60a5fa !important;
+}
+
+/* ==========================================================================
+   TỐI ƯU DARK MODE CHO TRANG DANH SÁCH (EMPLOYEE LIST & PAGINATION)
+   ========================================================================== */
+
+/* Fix Phân Trang (Pagination) */
+html[data-theme="dark"] .pagination,
+html[data-theme="dark"] .page-link,
+html[data-theme="dark"] .pagination a,
+html[data-theme="dark"] .pagination span {
+    background-color: #151e2e !important;
+    border-color: #243044 !important;
+    color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .page-link:hover,
+html[data-theme="dark"] .pagination a:hover {
+    background-color: #1e293b !important;
+    color: #60a5fa !important;
+}
+
+html[data-theme="dark"] .page-item.active .page-link,
+html[data-theme="dark"] .pagination .active {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+}
+
+/* Fix Khung Lọc / Tìm Kiếm / Thao Tác Hàng Loạt */
+html[data-theme="dark"] .filter-card,
+html[data-theme="dark"] .action-bar {
+    background-color: #151e2e !important;
+    border-color: #243044 !important;
+}

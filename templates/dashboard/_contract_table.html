@@ -1,0 +1,139 @@
+<div class="dashboard-table-card">
+
+    <div class="dashboard-table-header">
+
+        <div>
+
+            <h3 class="dashboard-table-title">
+
+                <i class="fa-solid fa-file-signature"></i>
+
+                Hợp đồng sắp hết hạn
+
+            </h3>
+
+            <p class="dashboard-table-subtitle">
+
+                Danh sách các hợp đồng cần gia hạn trong thời gian tới.
+
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="dashboard-table-body">
+
+        <div class="table-wrapper">
+
+            <table class="table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Nhân viên</th>
+
+                        <th>Ngày hết hạn</th>
+
+                        <th>Còn lại</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% if expiring_contracts %}
+
+                        {% for contract in expiring_contracts %}
+
+                        <tr>
+
+                            <td>
+
+                                {{ contract.FullName }}
+
+                            </td>
+
+                            <td>
+
+                                {{ contract.EndDate.strftime('%d/%m/%Y') }}
+
+                            </td>
+
+                            <td>
+
+                                {% if contract.DaysLeft <= 30 %}
+
+                                    <span class="badge badge-danger">
+
+                                        {{ contract.DaysLeft }} ngày
+
+                                    </span>
+
+                                {% elif contract.DaysLeft <= 90 %}
+
+                                    <span class="badge badge-warning">
+
+                                        {{ contract.DaysLeft }} ngày
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge badge-success">
+
+                                        {{ contract.DaysLeft }} ngày
+
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    {% else %}
+
+                        <tr>
+
+                            <td colspan="3" class="table-empty">
+
+                                Không có hợp đồng nào sắp hết hạn.
+
+                            </td>
+
+                        </tr>
+
+                    {% endif %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <div class="dashboard-table-footer">
+
+        <span>
+
+            Tổng:
+
+            <strong>
+
+                {{ expiring_contracts|length }}
+
+            </strong>
+
+            hợp đồng
+
+        </span>
+
+    </div>
+
+</div>

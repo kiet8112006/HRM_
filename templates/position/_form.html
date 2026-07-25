@@ -1,0 +1,142 @@
+<form method="POST" class="form-card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-grid">
+
+        <div class="form-group">
+
+            <label class="form-label">Mã Chức Vụ</label>
+
+            <input
+                class="form-control"
+                type="text"
+                name="position_code"
+                pattern="[A-Z0-9]{2,10}"
+                placeholder="Ví dụ: DEV01"
+                maxlength="10"
+                autocomplete="off"
+                required>
+
+        </div>
+
+        <div class="form-group">
+
+            <label class="form-label">Tên Chức Vụ</label>
+
+            <input
+                class="form-control"
+                type="text"
+                name="position_name"
+                placeholder="Ví dụ: Developer"
+                minlength="3"
+                maxlength="100"
+                autocomplete="off"
+                required>
+
+        </div>
+
+        <div class="form-group">
+
+            <label class="form-label">Cấp Bậc</label>
+
+            <input
+                class="form-control"
+                type="number"
+                name="position_level"
+                min="1"
+                max="20"
+                placeholder="Ví dụ: 3"
+                required>
+
+        </div>
+
+        <div class="form-group">
+
+            <label class="form-label">Lương Tối Thiểu</label>
+
+            <input
+                class="form-control"
+                type="number"
+                name="min_salary"
+                min="0"
+                max="10000000000"
+                step="1000"
+                placeholder="15000000"
+                required>
+
+        </div>
+
+        <div class="form-group">
+
+            <label class="form-label">Lương Tối Đa</label>
+
+            <input
+                class="form-control"
+                type="number"
+                name="max_salary"
+                min="0"
+                max="1000000000"
+                step="1000"
+                placeholder="25000000"
+                required>
+
+        </div>
+
+        <div class="form-group">
+
+            <label class="form-label">Trạng Thái</label>
+
+            <select
+                class="form-control"
+                name="status"
+                required>
+
+                <option value="Hoạt động">
+                    Hoạt động
+                </option>
+
+                <option value="Ngừng hoạt động">
+                    Ngừng hoạt động
+                </option>
+
+            </select>
+
+        </div>
+
+        <div class="form-group full">
+
+            <label class="form-label">Mô Tả</label>
+
+            <textarea
+                class="form-control"
+                name="description"
+                rows="5"
+                maxlength="255"
+                placeholder="Nhập mô tả chức vụ..."
+                style="height:auto;padding:12px 14px;resize:vertical;"></textarea>
+
+        </div>
+
+    </div>
+
+    <div class="form-actions">
+
+        <button
+            type="submit"
+            class="btn btn-primary">
+
+            ➕ Thêm Chức Vụ
+
+        </button>
+
+        <a
+            href="{{ url_for('position.positions') }}"
+            class="btn btn-secondary">
+
+            ← Quay lại
+
+        </a>
+
+    </div>
+
+</form>

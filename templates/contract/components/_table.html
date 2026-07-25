@@ -1,0 +1,121 @@
+<form
+    id="bulk-delete-form"
+    method="POST"
+    action="{{ url_for('contract.delete_selected_contracts') }}"
+    data-entity="hợp đồng">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    {% if session.get('role') == 'Admin' %}
+                    <th style="width: 40px; text-align: center;">
+                        <input type="checkbox" id="check-all">
+                    </th>
+                    {% endif %}
+                    <th>ID</th>
+                    <th>Mã HĐ</th>
+                    <th>Số HĐ</th>
+                    <th>Nhân viên</th>
+                    <th>Loại HĐ</th>
+                    <th>Lương cơ bản</th>
+                    <th>Phòng ban</th>
+                    <th>Chức vụ</th>
+                    <th>Nơi làm việc</th>
+                    <th>Ngày ký</th>
+                    <th>Bắt đầu</th>
+                    <th>Kết thúc</th>
+                    <th>Thử việc</th>
+                    <th>Trạng thái</th>
+                    <th style="width: 200px; text-align: center;">Thao Tác</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for contract in contracts %}
+                <tr>
+                    {% if session.get('role') == 'Admin' %}
+                    <td style="text-align: center;">
+                        <input
+                            type="checkbox"
+                            class="item-checkbox"
+                            name="contract_ids"
+                            value="{{ contract.ContractID }}">
+                    </td>
+                    {% endif %}
+
+                    <td>{{ contract.ContractID }}</td>
+                    <td>{{ contract.ContractCode }}</td>
+                    <td>{{ contract.ContractNumber }}</td>
+                    <td><strong>{{ contract.FullName }}</strong></td>
+                    <td>{{ contract.ContractType }}</td>
+                    <td>{{ "{:,.0f}".format(contract.BasicSalary or 0) }} VNĐ</td>
+                    <td>{{ contract.DepartmentName }}</td>
+                    <td>{{ contract.PositionName }}</td>
+                    <td>{{ contract.WorkLocation }}</td>
+                    <td>{{ contract.SignDate }}</td>
+                    <td>{{ contract.StartDate }}</td>
+                    <td>{{ contract.EndDate }}</td>
+                    <td>{{ contract.ProbationMonths }} tháng</td>
+
+                    <td>
+                        {% if contract.Status == 'Hiệu lực' %}
+                            <span class="badge badge-success">Hiệu lực</span>
+                        {% elif contract.Status == 'Gia hạn' %}
+                            <span class="badge badge-warning">Gia hạn</span>
+                        {% else %}
+                            <span class="badge badge-danger">Hoàn thành</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <div class="table-actions" style="display: flex; gap: 5px; justify-content: center; align-items: center;">
+                            <!-- Xem File Contract -->
+                            {% if contract.ContractFile %}
+                            <a href="{{ url_for('contract.preview_contract', id=contract.ContractID) }}"
+                               target="_blank"
+                               class="btn btn-info btn-sm"
+                               title="Xem file">
+                                📄 Xem
+                            </a>
+                            {% endif %}
+
+                            <!-- Tải PDF -->
+                            {% if session.get('role') in ['Admin', 'Manager'] %}
+                            <a href="{{ url_for('contract.download_contract', id=contract.ContractID) }}"
+                               class="btn btn-sm btn-secondary"
+                               title="Tải PDF">
+                                ⬇ PDF
+                            </a>
+                            {% endif %}
+
+                            <!-- Sửa Contract -->
+                            {% if session.get('role') in ['Admin', 'Manager'] %}
+                            <a href="/edit_contract/{{ contract.ContractID }}"
+                               class="btn btn-sm btn-primary"
+                               title="Sửa">
+                                ✏ Sửa
+                            </a>
+                            {% endif %}
+
+                            <!-- Xóa Contract -->
+                            {% if session.get('role') == 'Admin' %}
+                            <a href="/delete_contract/{{ contract.ContractID }}"
+                               class="btn btn-sm btn-danger"
+                               title="Xóa"
+                               onclick="return confirm('Bạn có chắc muốn xóa hợp đồng này? Hành động này không thể hoàn tác!')">
+                                🗑 Xóa
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</form>
+
+<!-- Nhúng JS dùng chung -->
+<script src="{{ url_for('static', filename='js/bulk_delete.js') }}"></script>

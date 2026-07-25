@@ -1,0 +1,127 @@
+<form method="POST" class="form-card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-grid">
+
+        <div class="form-group">
+            <label class="form-label">Mã Phòng Ban</label>
+            <input
+                class="form-control"
+                type="text"
+                name="department_code"
+                value="{{ department.DepartmentCode }}"
+                maxlength="10"
+                pattern="[A-Z]{2,10}"
+                placeholder="VD: HR, IT, SALE"
+                style="text-transform:uppercase"
+                autocomplete="off"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Tên Phòng Ban</label>
+            <input
+                class="form-control"
+                type="text"
+                name="department_name"
+                value="{{ department.DepartmentName }}"
+                minlength="3"
+                maxlength="100"
+                placeholder="Ví dụ: Công Nghệ Thông Tin"
+                autocomplete="off"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Địa Điểm</label>
+            <input
+                class="form-control"
+                type="text"
+                name="location"
+                value="{{ department.Location }}"
+                maxlength="100"
+                placeholder="Ví dụ: Thủ Đức"
+                autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Trưởng Phòng</label>
+            <select class="form-control" name="manager_id">
+
+                <option value="">
+                    -- Chưa có --
+                </option>
+
+                {% for emp in employees %}
+
+                <option
+                    value="{{ emp.EmployeeID }}"
+                    {% if emp.EmployeeID == department.ManagerID %}
+                    selected
+                    {% endif %}>
+
+                    {{ emp.FullName }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Trạng Thái</label>
+            <select class="form-control" name="status">
+
+                <option
+                    value="Active"
+                    {% if department.Status == "Active" %}
+                    selected
+                    {% endif %}>
+                    Active
+                </option>
+
+                <option
+                    value="Inactive"
+                    {% if department.Status == "Inactive" %}
+                    selected
+                    {% endif %}>
+                    Inactive
+                </option>
+
+            </select>
+        </div>
+
+        <div class="form-group full">
+            <label class="form-label">Mô Tả</label>
+            <textarea
+                class="form-control"
+                name="description"
+                rows="5"
+                maxlength="255"
+                placeholder="Mô tả phòng ban (không bắt buộc)">{{ department.Description }}</textarea>
+        </div>
+
+    </div>
+
+    <div class="form-actions">
+
+        <button
+            type="submit"
+            class="btn btn-primary">
+
+            💾 Cập Nhật
+
+        </button>
+
+        <a
+            href="{{ url_for('department.departments') }}"
+            class="btn btn-secondary">
+
+            ← Quay lại
+
+        </a>
+
+    </div>
+
+</form>

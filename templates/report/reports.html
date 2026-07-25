@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo Cáo Nhân Sự</title>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    
+    <!-- CSS Hệ Thống & Dark Mode -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/report.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark_light_report_mode.css') }}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body 
+    data-salary-names='{{ salary_names|tojson }}'
+    data-salary-values='{{ salary_values|tojson }}'
+    data-leave-status='{{ leave_status|tojson }}'
+    data-leave-counts='{{ leave_counts|tojson }}'
+    data-department-names='{{ department_names|tojson }}'
+    data-department-counts='{{ department_counts|tojson }}'>
+
+    <!-- Kiểm tra quyền: Chỉ Admin và Manager được phép xem nội dung báo cáo -->
+    {% if session.get('role') in ['Admin', 'Manager'] %}
+    <div class="app-wrapper">
+        <main class="app-main">
+            <div class="app-content">
+                <div class="container">
+                    
+                    <div class="page-header">
+                        <div>
+                            <h1>📊 Báo Cáo Nhân Sự</h1>
+                            <p>Báo cáo tổng quan hệ thống nhân sự.</p>
+                        </div>
+                        <a href="{{ url_for('dashboard.home') }}" class="btn btn-secondary">
+                            ← Dashboard
+                        </a>
+                    </div>
+
+                    <!-- Filter Card -->
+                    <div class="filter-card">
+                        <form method="GET">
+                            <div class="filter-grid">
+                                <div class="filter-group">
+                                    <label>Từ ngày</label>
+                                    <input type="date" name="from_date" value="{{ from_date }}">
+                                </div>
+
+                                <div class="filter-group">
+                                    <label>Đến ngày</label>
+                                    <input type="date" name="to_date" value="{{ to_date }}">
+                                </div>
+
+                                <div class="filter-group">
+                                    <label>Phòng ban</label>
+                                    <select name="department">
+                                        <option value="">Tất cả</option>
+                                        {% for d in departments %}
+                                        <option value="{{ d.DepartmentName }}" {% if department == d.DepartmentName %}selected{% endif %}>
+                                            {{ d.DepartmentName }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="filter-group">
+                                    <label>Chức vụ</label>
+                                    <select name="position">
+                                        <option value="">Tất cả</option>
+                                        {% for p in positions %}
+                                        <option value="{{ p.PositionName }}" {% if position == p.PositionName %}selected{% endif %}>
+                                            {{ p.PositionName }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="filter-group">
+                                    <label>Trạng thái</label>
+                                    <select name="status">
+                                        <option value="">Tất cả</option>
+                                        <option value="Đang làm">Đang làm</option>
+                                        <option value="Thử việc">Thử việc</option>
+                                        <option value="Nghỉ việc">Nghỉ việc</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="filter-action">
+                                <button class="btn-search">
+                                    <i class="fa-solid fa-filter"></i>&nbsp; Lọc dữ liệu
+                                </button>
+                                <a href="{{ url_for('report.reports') }}" class="btn-reset">
+                                    <i class="fa-solid fa-rotate-left"></i>&nbsp; Đặt lại
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- KPI Grid -->
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-icon"><i class="fa-solid fa-users"></i></div>
+                            <div class="kpi-content">
+                                <span>Tổng nhân viên</span>
+                                <h2>{{ total_employees }}</h2>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="kpi-icon secondary"><i class="fa-solid fa-building"></i></div>
+                            <div class="kpi-content">
+                                <span>Phòng ban</span>
+                                <h2>{{ total_departments }}</h2>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="kpi-icon warning"><i class="fa-solid fa-briefcase"></i></div>
+                            <div class="kpi-content">
+                                <span>Chức vụ</span>
+                                <h2>{{ total_positions }}</h2>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="kpi-icon success"><i class="fa-solid fa-user-check"></i></div>
+                            <div class="kpi-content">
+                                <span>Đang làm</span>
+                                <h2>{{ working_employees }}</h2>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="kpi-icon danger"><i class="fa-solid fa-user-xmark"></i></div>
+                            <div class="kpi-content">
+                                <span>Nghỉ việc</span>
+                                <h2>{{ quit_employees }}</h2>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="kpi-icon warning"><i class="fa-solid fa-user-clock"></i></div>
+                            <div class="kpi-content">
+                                <span>Thử việc</span>
+                                <h2>{{ probation_employees }}</h2>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="kpi-icon secondary"><i class="fa-solid fa-file-signature"></i></div>
+                            <div class="kpi-content">
+                                <span>Đơn chờ duyệt</span>
+                                <h2>{{ pending_leave }}</h2>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="kpi-icon danger"><i class="fa-solid fa-file-contract"></i></div>
+                            <div class="kpi-content">
+                                <span>Sắp hết HĐ</span>
+                                <h2>{{ expiring_contract }}</h2>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="kpi-icon success"><i class="fa-solid fa-money-bill-wave"></i></div>
+                            <div class="kpi-content">
+                                <span>Quỹ lương</span>
+                                <h2>{{ "{:,.0f}".format(total_salary) }} ₫</h2>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="kpi-icon"><i class="fa-solid fa-user-plus"></i></div>
+                            <div class="kpi-content">
+                                <span>Nhân viên mới</span>
+                                <h2>{{ new_employee }}</h2>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Grid -->
+                    <div class="dashboard-grid">
+                        <div class="report-card">
+                            <h2>🏢 Nhân viên theo phòng ban</h2>
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Phòng ban</th>
+                                        <th>Số nhân viên</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for department in department_report %}
+                                    <tr>
+                                        <td>{{ department.DepartmentName }}</td>
+                                        <td>{{ department.EmpCount }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="report-card">
+                            <h2>📊 Biểu đồ phòng ban</h2>
+                            <div class="chart-wrapper">
+                                <canvas id="departmentChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="report-card">
+                            <h2>🏆 Top 5 nhân viên lương cao nhất</h2>
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nhân viên</th>
+                                        <th>Lương</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for employee in top_salaries %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ employee.FullName }}</td>
+                                        <td>{{ "{:,.0f}".format(employee.TotalSalary) }} ₫</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="report-card">
+                            <h2>🌴 Thống kê nghỉ phép</h2>
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Trạng thái</th>
+                                        <th>Số lượng</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for leave in leave_report %}
+                                    <tr>
+                                        <td>{{ leave.Status }}</td>
+                                        <td>{{ leave.StatusCount }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="report-card">
+                            <h2>📊 Top 5 lương</h2>
+                            <div class="chart-wrapper">
+                                <canvas id="salaryChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="report-card">
+                            <h2>🥧 Tình trạng nghỉ phép</h2>
+                            <div class="chart-wrapper">
+                                <canvas id="leaveChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    {% else %}
+    <!-- Giao diện hiển thị khi User không có quyền truy cập -->
+    <div class="container" style="text-align: center; margin-top: 100px; padding: 40px; border-radius: 8px; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 64px; color: #dc2626; margin-bottom: 20px;"></i>
+        <h2 style="color: #1f2937; margin-bottom: 10px;">⚠️ Truy Cập Bị Từ Chối</h2>
+        <p style="color: #4b5563; margin-bottom: 30px;">Tài khoản của bạn không có quyền xem trang báo cáo quản trị hệ thống nhân sự này.</p>
+        <a href="{{ url_for('dashboard.home') }}" style="display: inline-block; padding: 10px 20px; background-color: #4b5563; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+            ← Quay lại Dashboard
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/report.js') }}"></script>
+    
+</body>
+</html>

@@ -1,0 +1,121 @@
+<div class="table-wrapper">
+
+<table class="table">
+
+    <tr>
+
+        <th>Time</th>
+
+        <th>User</th>
+
+        <th>Role</th>
+
+        <th>Module</th>
+
+        <th>Action</th>
+
+        <th>Description</th>
+
+        <th>IP</th>
+        <th>Browser</th>
+
+    </tr>
+
+    {% if logs %}
+
+        {% for log in logs %}
+
+        <tr>
+
+            <td>{{ log.CreatedAt.strftime("%d/%m/%Y %H:%M:%S") }}</td>
+
+            <td>{{ log.Username }}</td>
+
+            <td>{{ log.Role }}</td>
+
+            <td>{{ log.Module }}</td>
+
+            <td>
+
+                {% if log.Action=="Create" %}
+
+                    <span class="badge badge-success">
+
+                        Create
+
+                    </span>
+
+                {% elif log.Action=="Update" %}
+
+                    <span class="badge badge-warning">
+
+                        Update
+
+                    </span>
+
+                {% elif log.Action=="Delete" %}
+
+                    <span class="badge badge-danger">
+
+                        Delete
+
+                    </span>
+
+                {% elif log.Action=="Login" %}
+
+                    <span class="badge badge-primary">
+
+                        Login
+
+                    </span>
+
+                {% elif log.Action=="Logout" %}
+
+                    <span class="badge badge-secondary">
+
+                        Logout
+
+                    </span>
+
+                {% elif log.Action=="Export" %}
+
+                    <span class="badge badge-info">
+
+                        Export
+
+                    </span>
+
+                {% else %}
+
+                    {{ log.Action }}
+
+                {% endif %}
+
+            </td>
+
+            <td style="max-width:320px;">{{ log.Description }}</td>
+
+            <td>{{ log.IPAddress }}</td>
+            <td>{{ log.UserAgent }}</td>
+
+        </tr>
+
+        {% endfor %}
+
+    {% else %}
+
+        <tr>
+
+            <td colspan="7" style="text-align:center;">
+
+                Chưa có dữ liệu Audit Log.
+
+            </td>
+
+        </tr>
+
+    {% endif %}
+
+</table>
+
+</div>

@@ -1,0 +1,166 @@
+<form method="POST" class="form-card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-grid">
+
+        <div class="form-group">
+            <label class="form-label">Nhân Viên</label>
+            <select class="form-control" name="employee_id" required>
+                {% for emp in employees %}
+                <option value="{{ emp.EmployeeID }}">
+                    {{ emp.FullName }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Lương Cơ Bản</label>
+            <input
+                class="form-control"
+                type="number"
+                name="base_salary"
+                min="1"
+                max="1000000000"
+                step="1000"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Thưởng</label>
+            <input
+                class="form-control"
+                type="number"
+                name="bonus"
+                value="0"
+                min="0"
+                max="1000000000"
+                step="1000">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Phụ Cấp</label>
+            <input
+                class="form-control"
+                type="number"
+                name="allowance"
+                value="0"
+                min="0"
+                max="1000000000"
+                step="1000">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Lương Tăng Ca</label>
+            <input
+                class="form-control"
+                type="number"
+                name="overtime_pay"
+                value="0"
+                min="0"
+                max="1000000000"
+                step="1000">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Khấu Trừ</label>
+            <input
+                class="form-control"
+                type="number"
+                name="deduction"
+                value="0"
+                min="0"
+                max="1000000000"
+                step="1000">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Thuế</label>
+            <input
+                class="form-control"
+                type="number"
+                name="tax"
+                value="0"
+                min="0"
+                max="1000000000"
+                step="1000">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Bảo Hiểm</label>
+            <input
+                class="form-control"
+                type="number"
+                name="insurance"
+                value="0"
+                min="0"
+                max="100000000"
+                step="1000">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Tháng</label>
+            <input
+                class="form-control"
+                type="number"
+                name="month"
+                min="1"
+                max="12"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Năm</label>
+            <input
+                class="form-control"
+                type="number"
+                name="year"
+                min="2020"
+                max="2100"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Ngày Thanh Toán</label>
+            <input
+                class="form-control"
+                type="date"
+                name="payment_date"
+                max="{{ today }}"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Trạng Thái</label>
+            <select class="form-control" name="status">
+
+                <option value="Đã thanh toán">
+                    Đã thanh toán
+                </option>
+
+                <option value="Chưa thanh toán">
+                    Chưa thanh toán
+                </option>
+
+            </select>
+        </div>
+
+    </div>
+
+    <div class="form-actions">
+
+        <button
+            type="submit"
+            class="btn btn-primary">
+            ➕ Thêm Lương
+        </button>
+
+        <a
+            href="/salaries"
+            class="btn btn-secondary">
+            ← Quay lại
+        </a>
+
+    </div>
+
+</form>

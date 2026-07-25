@@ -1,0 +1,199 @@
+/* ==========================================================================
+   HRM SYSTEM - NOTIFICATION PAGE DARK / LIGHT MODE COMPREHENSIVE
+   Đồng bộ hoàn toàn với static/js/theme.js (html[data-theme="dark" / "light"])
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. KHAI BÁO BIẾN MÀU SẮC (CSS VARIABLES FOR NOTIFICATION)
+   -------------------------------------------------------------------------- */
+:root,
+html[data-theme="light"] {
+    --notif-bg-body: #f8fafc;
+    --notif-bg-card: #ffffff;
+    --notif-border-color: #e2e8f0;
+
+    --notif-text-primary: #0f172a;
+    --notif-text-secondary: #475569;
+    --notif-text-muted: #64748b;
+
+    /* Unread Rows & Badges */
+    --notif-unread-bg: #f0f9ff;
+    --notif-unread-border: #0284c7;
+    --notif-pill-bg: #e0f2fe;
+    --notif-pill-text: #0369a1;
+
+    /* Icons & Table Hover */
+    --notif-icon-box-bg: #eff6ff;
+    --notif-icon-box-color: #2563eb;
+    --notif-row-hover: #f1f5f9;
+
+    /* Buttons */
+    --notif-btn-read-bg: #e0e7ff;
+    --notif-btn-read-text: #4338ca;
+    --notif-btn-read-hover: #c7d2fe;
+}
+
+html[data-theme="dark"] {
+    --notif-bg-body: #0b0f19;
+    --notif-bg-card: #151e2e;
+    --notif-border-color: #243044;
+
+    --notif-text-primary: #f8fafc;
+    --notif-text-secondary: #cbd5e1;
+    --notif-text-muted: #94a3b8;
+
+    /* Unread Rows & Badges Dark Mode */
+    --notif-unread-bg: rgba(56, 189, 248, 0.1);
+    --notif-unread-border: #38bdf8;
+    --notif-pill-bg: rgba(56, 189, 248, 0.2);
+    --notif-pill-text: #38bdf8;
+
+    /* Icons & Table Hover Dark Mode */
+    --notif-icon-box-bg: rgba(59, 130, 246, 0.15);
+    --notif-icon-box-color: #60a5fa;
+    --notif-row-hover: #1e293b;
+
+    /* Buttons Dark Mode */
+    --notif-btn-read-bg: rgba(99, 102, 241, 0.2);
+    --notif-btn-read-text: #818cf8;
+    --notif-btn-read-hover: rgba(99, 102, 241, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   2. GLOBAL BODY & APP LAYOUT
+   -------------------------------------------------------------------------- */
+body {
+    background-color: var(--notif-bg-body) !important;
+    color: var(--notif-text-primary) !important;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Header Elements */
+.header-title h1 {
+    color: var(--notif-text-primary) !important;
+}
+
+.sub-title {
+    color: var(--notif-text-muted) !important;
+}
+
+.header-icon-box {
+    background-color: var(--notif-icon-box-bg) !important;
+    color: var(--notif-icon-box-color) !important;
+}
+
+.unread-pill {
+    background-color: var(--notif-pill-bg) !important;
+    color: var(--notif-pill-text) !important;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   3. TABLE CARD & NOTIFICATION LIST STYLES
+   -------------------------------------------------------------------------- */
+.table-card,
+.card {
+    background-color: var(--notif-bg-card) !important;
+    border: 1px solid var(--notif-border-color) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.table th {
+    background-color: var(--notif-bg-card) !important;
+    color: var(--notif-text-secondary) !important;
+    border-bottom: 2px solid var(--notif-border-color) !important;
+}
+
+.table td {
+    border-bottom: 1px solid var(--notif-border-color) !important;
+    color: var(--notif-text-primary) !important;
+}
+
+.table tbody tr:hover {
+    background-color: var(--notif-row-hover) !important;
+}
+
+/* Hàng thông báo CHƯA ĐỌC (.unread-row) */
+.table tr.unread-row {
+    background-color: var(--notif-unread-bg) !important;
+}
+
+html[data-theme="dark"] .table tr.unread-row {
+    border-left: 3px solid var(--notif-unread-border) !important;
+}
+
+.title-text {
+    color: var(--notif-text-primary) !important;
+    font-weight: 600;
+}
+
+.message-text {
+    color: var(--notif-text-secondary) !important;
+}
+
+.time-text {
+    color: var(--notif-text-muted) !important;
+    font-size: 13px;
+}
+
+.dot-unread {
+    background-color: #38bdf8 !important;
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   4. BUTTONS & ACTIONS IN TABLE
+   -------------------------------------------------------------------------- */
+.btn-action-read {
+    background-color: var(--notif-btn-read-bg) !important;
+    color: var(--notif-btn-read-text) !important;
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none !important;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-action-read:hover {
+    background-color: var(--notif-btn-read-hover) !important;
+}
+
+.read-done {
+    color: var(--notif-text-muted) !important;
+    font-size: 13px;
+}
+
+/* --------------------------------------------------------------------------
+   5. EMPTY STATE (KHI KHÔNG CÓ THÔNG BÁO)
+   -------------------------------------------------------------------------- */
+.empty-state-box {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--notif-text-muted) !important;
+}
+
+.empty-state-box i {
+    font-size: 48px;
+    margin-bottom: 12px;
+    color: var(--notif-text-muted) !important;
+    opacity: 0.7;
+}
+
+.empty-state-box h3 {
+    color: var(--notif-text-primary) !important;
+    margin-bottom: 6px;
+}
+
+.empty-state-box p {
+    color: var(--notif-text-muted) !important;
+}

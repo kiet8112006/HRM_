@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh Sách Phòng Ban</title>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- CSS Tái Sử Dụng Cho Tất Cả Các Trang Danh Sách -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/list.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark_light_mode.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="page-header">
+
+        <div>
+
+            <h1>
+                Danh Sách Phòng Ban
+            </h1>
+
+        </div>
+
+    </div>
+
+    {% include "department/components/_flash.html" %}
+
+    <div class="card mb-2">
+
+        {% include "department/components/_search.html" %}
+
+    </div>
+
+    <div class="card mb-2">
+
+        {% include "department/components/_actions.html" %}
+
+    </div>
+
+    <div class="card">
+
+        {% include "department/components/_table.html" %}
+
+    </div>
+
+    <div class="pagination">
+
+        {% include "department/components/_pagination.html" %}
+
+    </div>
+
+</div>
+
+    <script src="{{ url_for('static', filename='js/department_bulk_delete.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+</body>
+
+</html>

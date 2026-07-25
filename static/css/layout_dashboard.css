@@ -1,0 +1,389 @@
+/* =========================================================
+   App Layout & Dashboard Containers
+========================================================= */
+
+.app-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+.app-main {
+    flex: 1;
+    margin-left: 260px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    transition: margin-left 0.3s ease;
+}
+
+.app-content {
+    flex: 1;
+    padding: var(--content-padding);
+}
+
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* =========================================================
+   KPI Cards Section
+========================================================= */
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+}
+
+.kpi-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--card-shadow-hover);
+}
+
+.kpi-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.kpi-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 6px 0 10px 0;
+    line-height: 1.2;
+}
+
+.kpi-change {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.kpi-change.positive { color: #10b981; }
+.kpi-change.neutral { color: #2563eb; }
+.kpi-change.negative { color: #ef4444; }
+
+.kpi-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.kpi-icon.primary { background: #eff6ff; color: #2563eb; }
+.kpi-icon.success { background: #ecfdf5; color: #10b981; }
+.kpi-icon.warning { background: #fffbeb; color: #f59e0b; }
+.kpi-icon.danger { background: #fef2f2; color: #ef4444; }
+
+/* =========================================================
+   Chart Grid & Chart Cards (Tối ưu biểu đồ gọn gàng)
+========================================================= */
+
+.chart-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+/* Biểu đồ đầu tiên (Lương) kéo dài full rộng 2 cột */
+.chart-grid .chart-card:first-child {
+    grid-column: span 2;
+}
+
+.chart-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.chart-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--card-shadow-hover);
+}
+
+.chart-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.chart-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.chart-title i {
+    color: var(--primary);
+    font-size: 16px;
+}
+
+.chart-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 4px 0 0 0;
+}
+
+/* Giới hạn khung Canvas để biểu đồ không bị phình quá cỡ */
+.chart-body {
+    padding: 16px;
+    position: relative;
+    height: 280px; /* Chiều cao cố định chuẩn đẹp cho Chart.js */
+    width: 100%;
+}
+
+.chart-body canvas {
+    max-height: 100% !important;
+    width: 100% !important;
+}
+
+.chart-footer {
+    padding: 12px 20px;
+    background: #fafcff;
+    border-top: 1px solid #f1f5f9;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* =========================================================
+   Dashboard Tables Section
+========================================================= */
+
+.dashboard-table-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 20px;
+}
+
+.dashboard-table-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-table-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.dashboard-table-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dashboard-table-title i {
+    color: var(--primary);
+}
+
+.dashboard-table-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.dashboard-table-body {
+    flex: 1;
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.table th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 18px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.table td {
+    padding: 14px 18px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table tbody tr:hover {
+    background: #f8fafc;
+}
+
+/* Badges */
+.badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.badge-danger { background: #fee2e2; color: #dc2626; }
+.badge-warning { background: #fef3c7; color: #d97706; }
+.badge-success { background: #dcfce7; color: #15803d; }
+
+.dashboard-table-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #f1f5f9;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.table-empty {
+    text-align: center;
+    color: #94a3b8;
+    padding: 30px 0;
+    font-style: italic;
+}
+
+/* Quick Actions Card */
+.quick-actions {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    padding: 20px;
+    box-shadow: var(--card-shadow);
+}
+
+.quick-actions-header {
+    margin-bottom: 16px;
+}
+
+.quick-actions-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.quick-actions-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.stat-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+}
+
+.stat-icon.primary { background: #eff6ff; color: #2563eb; }
+.stat-icon.success { background: #ecfdf5; color: #10b981; }
+.stat-icon.warning { background: #fffbeb; color: #f59e0b; }
+.stat-icon.danger { background: #fef2f2; color: #ef4444; }
+
+.stat-title {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-top: 2px;
+}
+
+.stat-description {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+/* =========================================================
+   Responsive Breakpoints
+========================================================= */
+
+@media (max-width: 1200px) {
+    .kpi-grid, .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .dashboard-table-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 992px) {
+    .app-main {
+        margin-left: 0;
+    }
+    .chart-grid {
+        grid-template-columns: 1fr;
+    }
+    .chart-grid .chart-card:first-child {
+        grid-column: span 1;
+    }
+}
+
+@media (max-width: 576px) {
+    .kpi-grid, .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    .app-content {
+        padding: 16px;
+    }
+}

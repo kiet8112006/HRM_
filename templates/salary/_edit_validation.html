@@ -1,0 +1,80 @@
+<script>
+document.querySelector("form").addEventListener("submit", function(e){
+
+    const baseSalary = Number(document.querySelector("[name='base_salary']").value);
+    const bonus = Number(document.querySelector("[name='bonus']").value);
+    const allowance = Number(document.querySelector("[name='allowance']").value);
+    const overtime = Number(document.querySelector("[name='overtime_pay']").value);
+    const deduction = Number(document.querySelector("[name='deduction']").value);
+    const tax = Number(document.querySelector("[name='tax']").value);
+    const insurance = Number(document.querySelector("[name='insurance']").value);
+    const month = Number(document.querySelector("[name='month']").value);
+    const year = Number(document.querySelector("[name='year']").value);
+    const paymentDate = document.querySelector("[name='payment_date']").value;
+    const status = document.querySelector("[name='status']").value;
+
+    const today = new Date().toISOString().split("T")[0];
+
+    if(baseSalary <= 0){
+        alert("Lương cơ bản phải lớn hơn 0!");
+        e.preventDefault();
+        return;
+    }
+
+    if(
+        bonus < 0 ||
+        allowance < 0 ||
+        overtime < 0 ||
+        deduction < 0 ||
+        tax < 0 ||
+        insurance < 0
+    ){
+        alert("Các khoản tiền không được âm!");
+        e.preventDefault();
+        return;
+    }
+
+    if(month < 1 || month > 12){
+        alert("Tháng phải từ 1 đến 12!");
+        e.preventDefault();
+        return;
+    }
+
+    if(year < 2020 || year > 2100){
+        alert("Năm không hợp lệ!");
+        e.preventDefault();
+        return;
+    }
+
+    if(paymentDate > today){
+        alert("Ngày trả lương không được lớn hơn ngày hiện tại!");
+        e.preventDefault();
+        return;
+    }
+
+    if(
+        status !== "Chưa thanh toán" &&
+        status !== "Đã thanh toán"
+    ){
+        alert("Trạng thái không hợp lệ!");
+        e.preventDefault();
+        return;
+    }
+
+    const netSalary =
+        baseSalary +
+        bonus +
+        allowance +
+        overtime -
+        deduction -
+        tax -
+        insurance;
+
+    if(netSalary < 0){
+        alert("Lương thực nhận không được nhỏ hơn 0!");
+        e.preventDefault();
+        return;
+    }
+
+});
+</script>

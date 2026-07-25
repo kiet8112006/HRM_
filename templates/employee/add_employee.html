@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+
+<html lang="vi" data-theme="light">
+
+<head>
+
+    <title>Thêm Nhân Viên</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark_light_add_mode.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="page-header">
+
+        <div>
+
+            <h1>Thêm Nhân Viên</h1>
+
+        </div>
+
+    </div>
+
+    {% include "employee/components/_flash.html" %}
+
+    {% include "employee/_form.html" %}
+
+</div>
+
+{% include "employee/_validation.html" %}
+
+<script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
+<script src="{{ url_for('static',filename='js/avatar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+</body>
+
+</html>

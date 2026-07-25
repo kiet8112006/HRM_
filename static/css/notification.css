@@ -1,0 +1,252 @@
+/* =========================================================
+   FULL BORDER & COLORED NOTIFICATION TABLE STYLES
+========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+}
+
+/* --- Header Section --- */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #cbd5e1; /* Viền header đậm rõ */
+}
+
+.header-title h1 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-icon-box {
+    width: 42px;
+    height: 42px;
+    background: #2563eb;
+    color: #ffffff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+}
+
+.sub-title {
+    font-size: 13.5px;
+    color: #475569;
+    margin: 0;
+}
+
+.unread-pill {
+    background-color: #fee2e2;
+    color: #dc2626;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 12px;
+    border: 1px solid #fca5a5;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-primary { background: #2563eb; color: #fff; border: 1px solid #1d4ed8; }
+.btn-primary:hover { background: #1d4ed8; }
+
+.btn-secondary { background: #ffffff; color: #334155; border: 1px solid #94a3b8; }
+.btn-secondary:hover { background: #f1f5f9; }
+
+/* --- CARD & BẢNG CÓ ĐƯỜNG VIỀN KHUNG RÕ RÀNG --- */
+.table-card {
+    background: #ffffff;
+    border: 2px solid #cbd5e1; /* Khung bảng rõ ràng */
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+/* Ép đường viền đầy đủ cho tất cả các ô trong Bảng (Grid Lines) */
+.table {
+    width: 100%;
+    border-collapse: collapse !important; /* Gộp viền chuẩn bảng */
+    font-size: 13.5px;
+    text-align: left;
+}
+
+/* Viền & Màu Tiêu đề Bảng (Header Table) */
+.table th {
+    background-color: #e2e8f0 !important; /* Nền xám xanh nổi bật */
+    color: #0f172a !important;
+    font-weight: 700;
+    padding: 14px 16px;
+    border: 1px solid #cbd5e1 !important; /* Viền ô tiêu đề */
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+/* Viền & Màu các ô Dữ liệu (Cell Table) */
+.table td {
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0 !important; /* Viền đầy đủ giữa các ô */
+    color: #334155;
+    vertical-align: middle;
+}
+
+/* Đổi màu xen kẽ giữa các dòng (Zebra Striping) */
+.table tbody tr:nth-child(even) td {
+    background-color: #f8fafc;
+}
+
+.table tbody tr:hover td {
+    background-color: #eff6ff !important; /* Đổi màu xanh nhẹ khi rê chuột */
+}
+
+/* --- TÔ MÀU RIÊNG CHO DÒNG CHƯA ĐỌC (UNREAD) --- */
+.unread-row td {
+    background-color: #f0fdf4 !important; /* Nền xanh lá/xanh dương nhạt rõ rệt */
+    border-bottom: 1.5px solid #86efac !important;
+}
+
+.dot-unread {
+    width: 10px;
+    height: 10px;
+    background-color: #2563eb;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.title-text {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.unread-row .title-text {
+    color: #1e40af;
+    font-size: 14px;
+}
+
+.message-text {
+    margin: 0;
+    color: #334155;
+    line-height: 1.5;
+}
+
+.time-text {
+    font-size: 12.5px;
+    color: #64748b;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* --- TÔ MÀU VÀ VIỀN RÕ RÀNG CHO BADGES --- */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid transparent;
+}
+
+.badge-success { 
+    background-color: #dcfce7; 
+    color: #15803d; 
+    border-color: #86efac; 
+}
+
+.badge-warning { 
+    background-color: #fef3c7; 
+    color: #b45309; 
+    border-color: #fde047; 
+}
+
+.badge-danger { 
+    background-color: #fee2e2; 
+    color: #b91c1c; 
+    border-color: #fca5a5; 
+}
+
+.badge-info { 
+    background-color: #e0f2fe; 
+    color: #0369a1; 
+    border-color: #7dd3fc; 
+}
+
+/* --- THAO TÁC NÚT BẤM CÓ MÀU ĐỌC NỔI BẬT --- */
+.btn-action-read {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background-color: #10b981;
+    color: #ffffff;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+    transition: all 0.2s ease;
+}
+
+.btn-action-read:hover {
+    background-color: #059669;
+    transform: scale(1.03);
+}
+
+.read-done {
+    font-size: 12.5px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+/* --- BẢNG RỐNG --- */
+.empty-table {
+    padding: 50px 20px !important;
+    text-align: center;
+}
+
+.empty-state-box i {
+    font-size: 40px;
+    color: #94a3b8;
+    margin-bottom: 10px;
+}

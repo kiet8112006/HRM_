@@ -1,0 +1,7 @@
+/* static/css/style.css */
+@import url('auth.css');
+@import url('sidebar.css');
+@import url('dashboard.css');
+@import url('layout_dashboard.css');
+@import url('list.css');
+@import url('add.css');

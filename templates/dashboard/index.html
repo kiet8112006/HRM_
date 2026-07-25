@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRM Dashboard</title>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Main System CSS -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/layout_dashboard.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/dark_light_mode.css') }}">
+
+
+</head>
+
+<body
+    data-department-labels='{{ json_department_names|default("[]", true)|safe }}'
+    data-department-counts='{{ json_department_counts|default("[]", true)|safe }}'
+    data-salary-months='{{ json_salary_months|default("[]", true)|safe }}'
+    data-salary-totals='{{ json_salary_totals|default("[]", true)|safe }}'
+    data-attendance-data='{{ json_attendance_data|default("[]", true)|safe }}'>
+
+    <!-- App Layout Wrapper -->
+    <div class="app-wrapper">
+
+        <!-- Mobile Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar Component -->
+        {% include "components/_sidebar.html" %}
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <div class="app-content">
+                <div class="dashboard-container">
+
+                    <!-- Header Component -->
+                    {% include "dashboard/_header.html" %}
+
+                    <!-- KPI Cards Section -->
+                    <section class="dashboard-section">
+                        {% include "dashboard/_kpi_cards.html" %}
+                    </section>
+
+                    <!-- Charts Section -->
+                    <section class="dashboard-section">
+                        {% include "dashboard/_charts.html" %}
+                    </section>
+
+                    <!-- Tables Section -->
+                    <section class="dashboard-section">
+                        {% include "dashboard/_tables.html" %}
+                    </section>
+
+                    <!-- Quick Stats Section -->
+                    <section class="dashboard-section">
+                        {% include "dashboard/_quick_stats.html" %}
+                    </section>
+
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <!-- Chart.js Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+    <!-- Application Scripts -->
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+</body>
+
+</html>

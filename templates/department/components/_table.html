@@ -1,0 +1,93 @@
+<form id="bulk-delete-form"
+    method="POST"
+    action="{{ url_for('department.delete_selected_departments') }}"
+    data-entity="phòng ban">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="table-wrapper">
+    <table class="table">
+
+<tr>{% if session.get('role') == 'Admin' %}
+    <th style="width:50px;">
+        <input
+            type="checkbox"
+            id="check-all">
+    </th>
+    {% endif %}
+    <th>ID</th>
+    <th>Mã Phòng Ban</th>
+    <th>Tên Phòng Ban</th>
+    <th>Địa Điểm</th>
+    <th>Quản Lý</th>
+    <th>Trạng Thái</th>
+    <th style="width:180px;">Thao Tác</th>
+</tr>
+
+{% for dept in departments %}
+
+<tr>{% if session.get('role') == 'Admin' %}
+    <td>
+
+        <!-- Đã đổi class="department-checkbox" -> class="item-checkbox" -->
+        <input
+            type="checkbox"
+            class="item-checkbox"
+            name="department_ids"
+            value="{{ dept.DepartmentID }}">
+
+    </td>{% endif %}
+    <td>{{ dept.DepartmentID }}</td>
+    <td>{{ dept.DepartmentCode }}</td>
+    <td>{{ dept.DepartmentName }}</td>
+    <td>{{ dept.Location }}</td>
+    <td>{{ dept.ManagerName }}</td>
+
+    <td>
+        {% if dept.Status == "Active" %}
+            <span class="badge badge-success">
+                Active
+            </span>
+        {% else %}
+            <span class="badge badge-danger">
+                Inactive
+            </span>
+        {% endif %}
+    </td>
+
+    <td>
+
+        <div class="table-actions">
+            {% if session.get('role') in ['Admin', 'Manager'] %}
+            <a
+                href="/edit_department/{{ dept.DepartmentID }}"
+                class="btn btn-primary"
+                title="Sửa">
+
+                Sửa
+            </a>
+            {% endif %}
+            {% if session.get('role') == 'Admin' %}
+            <a
+                href="/delete_department/{{ dept.DepartmentID }}"
+                class="btn btn-danger"
+                title="Xóa"
+                onclick="return confirm('Bạn có chắc muốn xóa phòng ban này? Hành động này không thể hoàn tác!')">
+                Xóa
+            </a>
+            {% endif %}
+
+            
+        </div>
+
+    </td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+</div>
+
+</form>
+
+<!-- Nhúng file JS dùng chung -->
+<script src="{{ url_for('static', filename='js/bulk_delete.js') }}"></script>
