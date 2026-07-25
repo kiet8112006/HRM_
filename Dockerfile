@@ -10,7 +10,8 @@ ENV PYTHONUNBUFFERED=1 \
 
 # 2. Cài đặt ODBC Driver cho SQL Server (Debian 12)
 # Cài đặt ODBC Driver 17 & 18 cho SQL Server (Debian 12)
-RUN apt-get update && apt-get install -y --no-install-requests \
+# 2. Cài đặt ODBC Driver cho SQL Server (Debian 12)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     gnupg2 \
     unixodbc-dev \
