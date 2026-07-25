@@ -9,18 +9,17 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
 # 2. Cài đặt ODBC Driver cho SQL Server (Debian 12)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Cài đặt ODBC Driver 17 & 18 cho SQL Server (Debian 12)
+RUN apt-get update && apt-get install -y --no-install-requests \
     curl \
     gnupg2 \
     unixodbc-dev \
     ca-certificates \
-    && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
-    && curl -fsSL https://packages.microsoft.com/config/debian/12/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
+    && curl https://packages.microsoft.com/config/debian/12/prod.list > /etc/apt/sources.list.d/mssql-release.list \
     && apt-get update \
-    && ACCEPT_EULA=Y apt-get install -y msodbcsql18 \
-    && apt-get clean \
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql17 msodbcsql18 \
     && rm -rf /var/lib/apt/lists/*
-
 # 3. CACHE LAYER: Copy requirements.txt và cài thư viện TRƯỚC
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
