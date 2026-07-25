@@ -357,24 +357,13 @@ def export_employees_csv():
     finally:
         conn.close()
 
-@employee_bp.route("employee_detail/<int:id>")
+@employee_bp.route("/employee_detail/<int:id>")
 @login_required
 @role_required('Admin', 'Manager')
 def employee_detail(id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute(""" 
-            SELECT E.EmployeeID, 'NV' || LPAD(CAST(E.EmployeeID AS TEXT), 4, '0') AS EmployeeCode, 
-                   E.FullName, E.Gender, E.DOB, E.Phone, E.Email, E.CitizenID, E.Address, 
-                   E.Nationality, E.MaritalStatus, E.EmergencyContact, E.EmergencyPhone, E.HireDate, E.Status, 
-                   D.DepartmentName, P.PositionName 
-            FROM Employees E 
-            LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
-            LEFT CASCADE Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
-            WHERE E.EmployeeID = %s AND E.IsDeleted = 0
-        """, (id,))
-        # Chú ý phần LEFT JOIN chuẩn ở dưới
         cursor.execute(""" 
             SELECT E.EmployeeID, 'NV' || LPAD(CAST(E.EmployeeID AS TEXT), 4, '0') AS EmployeeCode, 
                    E.FullName, E.Gender, E.DOB, E.Phone, E.Email, E.CitizenID, E.Address, 
