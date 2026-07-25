@@ -28,7 +28,7 @@ auth_bp = Blueprint("auth", __name__)
 
 
 # =====================================================================
-# 1. ROUTE: ĐĂNG NHẬP
+# 1. ROUTE: ĐĂNG NHẬP (CÓ HỖ TRỢ MOCK DEMO CẬP NHẬT)
 # =====================================================================
 @auth_bp.route("/login", methods=["GET", "POST"])
 @limiter.limit('100 per minute')
@@ -47,6 +47,20 @@ def login():
         if password_error:
             flash(password_error, 'danger')
             return redirect(url_for('auth.login'))
+
+        # -------------------------------------------------------------
+        # MOCK LOGIN DEMO CHO CLOUD/CV: TẢI KHOẢN ADMIN DỰ PHÒNG
+        # -------------------------------------------------------------
+        if username == "admin" and password == "123456":
+            session['user_id'] = 1
+            session['username'] = "admin"
+            session['full_name'] = "Quản trị viên Demo"
+            session['role'] = "Admin"
+            session.permanent = bool(remember)
+
+            flash('Đăng nhập Demo thành công với quyền Admin.', 'success')
+            return redirect(url_for('dashboard.home'))
+        # -------------------------------------------------------------
 
         conn = None
         try:
@@ -92,13 +106,73 @@ def login():
             if conn:
                 conn.rollback()
             current_app.logger.error(f"Lỗi hệ thống khi đăng nhập user '{username}': {str(e)}")
-            flash("Không thể kết nối đến cơ sở dữ liệu. Vui lòng kiểm tra lại cấu hình CSDL!", "danger")
+            flash("Không thể kết nối đến CSDL. Hãy sử dụng tài khoản Demo (admin / 123456)!", "warning")
             return redirect(url_for('auth.login'))
         finally:
             if conn:
                 conn.close()
 
     return render_template("auth/login.html")
+
+
+# =====================================================================
+# 2. ROUTE: QUÊN MẬT KHẨU
+# =====================================================================
+@auth_bp.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        username_error = validate_username(username)
+        if username_error:
+            flash(username_error, 'danger')
+            return redirect(url_for('auth.forgot_password'))
+        
+        password_error = validate_password(password)
+        if password_error:
+            flash(password_error, 'danger')
+            return redirect(url_for('auth.forgot_password'))
+        
+        confirm_error = validate_confirm_password(password, confirm_password)
+        if confirm_error:
+            flash(confirm_error, 'danger')
+            return redirect(url_for('auth.forgot_password'))
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SELECT UserID FROM Users WHERE Username = ?", (username,))
+            user = cursor.fetchone()
+
+            if user is None:
+                flash('Tên đăng nhập không tồn tại.', 'danger')
+                return redirect(url_for('auth.forgot_password'))
+
+            new_password_hash = hash_password(password)
+            cursor.execute("UPDATE Users SET PasswordHash = ? WHERE Username = ?", (new_password_hash, username))
+            conn.commit()
+
+            log_activity(
+                module='Authentication', 
+                action='ForgotPassword', 
+                description=f"User {username} reset password successfully."
+            )
+
+            flash('Đổi mật khẩu thành công. Vui lòng đăng nhập lại.', 'success')
+            return redirect(url_for('auth.login'))
+
+        except Exception as e:
+            conn.rollback()
+            current_app.logger.error(f"Lỗi hệ thống khi quên mật khẩu user '{username}': {str(e)}")
+            flash("Đã có lỗi hệ thống xảy ra khi lấy lại mật khẩu!", "danger")
+            return redirect(url_for('auth.forgot_password'))
+        finally:
+            conn.close()
+
+    return render_template('auth/forgot_password.html')
+
 
 # =====================================================================
 # 3. ROUTE: ĐỔI MẬT KHẨU
