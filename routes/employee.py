@@ -386,3 +386,27 @@ def employee_detail(id):
         return redirect("/employees")
     finally:
         conn.close()
+
+@employee_bp.route("/delete_selected_employees", methods=["POST"])
+@login_required
+@role_required('Admin')
+def delete_selected_employees():
+    employee_ids = request.form.getlist("employee_ids")
+    if not employee_ids:
+        flash("Chưa chọn nhân viên nào để xóa!", "warning")
+        return redirect("/employees")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        for emp_id in employee_ids:
+            cursor.execute("UPDATE Employees SET IsDeleted = 1 WHERE EmployeeID = %s", (emp_id,))
+        conn.commit()
+        flash(f"Đã xóa thành công {len(employee_ids)} nhân viên!", "success")
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error(f"Lỗi khi xóa nhiều nhân viên: {str(e)}")
+        flash("Có lỗi hệ thống xảy ra khi xóa nhân viên!", "danger")
+    finally:
+        conn.close()
+    return redirect("/employees")
