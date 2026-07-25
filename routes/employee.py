@@ -204,7 +204,7 @@ def add_employee():
                 INSERT INTO Employees (
                     FullName, Gender, DOB, HireDate, Email, Phone, DepartmentID, PositionID, 
                     ManagerID, Status, CitizenID, Address, Nationality, MaritalStatus, 
-                    EmergencyContact, EmergencyPhone, photo, CitizenFrontPhoto, CitizenBackPhoto, IsDeleted
+                    EmergencyContact, EmergencyPhone, Photo, CitizenFrontPhoto, CitizenBackPhoto, IsDeleted
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0)
             """, (fullname, gender, dob, hiredate, email, phone, department_id, position_id, 
