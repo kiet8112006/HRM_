@@ -1,3 +1,10 @@
+from init_db import init_database
+
+try:
+    init_database()
+except Exception as e:
+    print(f"LỗiDB: {e}")
+
 import os
 from dotenv import load_dotenv
 load_dotenv()
