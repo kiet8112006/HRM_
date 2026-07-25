@@ -37,7 +37,7 @@ def get_cached_departments():
             conn = get_connection()
             cursor = conn.cursor()
             try:
-                cursor.execute("SELECT departmentid, departmentname FROM Departments WHERE isdeleted = 0 ORDER BY departmentname")
+                cursor.execute("SELECT DepartmentID, DepartmentName FROM Departments WHERE IsDeleted = 0 ORDER BY DepartmentName")
                 return cursor.fetchall()
             finally:
                 conn.close()
@@ -46,7 +46,7 @@ def get_cached_departments():
         conn = get_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute("SELECT departmentid, departmentname FROM Departments WHERE isdeleted = 0 ORDER BY departmentname")
+            cursor.execute("SELECT DepartmentID, DepartmentName FROM Departments WHERE IsDeleted = 0 ORDER BY DepartmentName")
             return cursor.fetchall()
         finally:
             conn.close()
@@ -59,7 +59,7 @@ def get_cached_positions():
             conn = get_connection()
             cursor = conn.cursor()
             try:
-                cursor.execute("SELECT positionid, positionname FROM Positions WHERE isdeleted = 0 ORDER BY positionname")
+                cursor.execute("SELECT PositionID, PositionName FROM Positions WHERE IsDeleted = 0 ORDER BY PositionName")
                 return cursor.fetchall()
             finally:
                 conn.close()
@@ -68,7 +68,7 @@ def get_cached_positions():
         conn = get_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute("SELECT positionid, positionname FROM Positions WHERE isdeleted = 0 ORDER BY positionname")
+            cursor.execute("SELECT PositionID, PositionName FROM Positions WHERE IsDeleted = 0 ORDER BY PositionName")
             return cursor.fetchall()
         finally:
             conn.close()
@@ -95,36 +95,36 @@ def employees():
         cursor.execute("""
             SELECT COUNT(*) 
             FROM Employees E 
-            LEFT JOIN Departments D ON E.departmentid = D.departmentid AND D.isdeleted = 0
-            LEFT JOIN Positions P ON E.positionid = P.positionid AND P.isdeleted = 0
-            WHERE E.isdeleted = 0
-              AND E.fullname ILIKE %s
-              AND COALESCE(D.departmentname, '') ILIKE %s
-              AND COALESCE(P.positionname, '') ILIKE %s
-              AND COALESCE(E.status, 'Active') ILIKE %s
+            LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
+            LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
+            WHERE E.IsDeleted = 0
+              AND E.FullName ILIKE %s
+              AND COALESCE(D.DepartmentName, '') ILIKE %s
+              AND COALESCE(P.PositionName, '') ILIKE %s
+              AND COALESCE(E.Status, 'Active') ILIKE %s
         """, (f"%{keyword}%", f"%{department}%", f"%{position}%", f"%{status}%"))
         total_records = cursor.fetchone()[0]
 
         cursor.execute("""
-            SELECT E.employeeid,
-                   'NV' || LPAD(CAST(E.employeeid AS TEXT), 4, '0') AS EmployeeCode,
-                   E.fullname, 
-                   E.photo,
-                   E.gender,
-                   E.phone,
-                   E.email,
-                   COALESCE(E.status, 'Active') AS Status,
-                   D.departmentname,
-                   P.positionname
+            SELECT E.EmployeeID,
+                   'NV' || LPAD(CAST(E.EmployeeID AS TEXT), 4, '0') AS EmployeeCode,
+                   E.FullName, 
+                   E."Photo",
+                   E.Gender,
+                   E.Phone,
+                   E.Email,
+                   COALESCE(E.Status, 'Active') AS Status,
+                   D.DepartmentName,
+                   P.PositionName
             FROM Employees E
-            LEFT JOIN Departments D ON E.departmentid = D.departmentid AND D.isdeleted = 0
-            LEFT JOIN Positions P ON E.positionid = P.positionid AND P.isdeleted = 0
-            WHERE E.isdeleted = 0
-              AND E.fullname ILIKE %s 
-              AND COALESCE(D.departmentname, '') ILIKE %s
-              AND COALESCE(P.positionname, '') ILIKE %s
-              AND COALESCE(E.status, 'Active') ILIKE %s
-            ORDER BY E.employeeid DESC
+            LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
+            LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
+            WHERE E.IsDeleted = 0
+              AND E.FullName ILIKE %s 
+              AND COALESCE(D.DepartmentName, '') ILIKE %s
+              AND COALESCE(P.PositionName, '') ILIKE %s
+              AND COALESCE(E.Status, 'Active') ILIKE %s
+            ORDER BY E.EmployeeID DESC
             LIMIT %s OFFSET %s
         """, (f"%{keyword}%", f"%{department}%", f"%{position}%", f"%{status}%", per_page, offset))
         employees_list = cursor.fetchall()
@@ -202,9 +202,9 @@ def add_employee():
 
             cursor.execute("""
                 INSERT INTO Employees (
-                    fullname, gender, dob, hiredate, email, phone, departmentid, positionid, 
-                    managerid, status, citizenid, address, nationality, maritalstatus, 
-                    emergencycontact, emergencyphone, photo, citizenfrontphoto, citizenbackphoto, isdeleted
+                    FullName, Gender, DOB, HireDate, Email, Phone, DepartmentID, PositionID, 
+                    ManagerID, Status, CitizenID, Address, Nationality, MaritalStatus, 
+                    EmergencyContact, EmergencyPhone, "Photo", CitizenFrontPhoto, CitizenBackPhoto, IsDeleted
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0)
             """, (fullname, gender, dob, hiredate, email, phone, department_id, position_id, 
@@ -232,7 +232,7 @@ def add_employee():
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("""SELECT employeeid, fullname FROM Employees WHERE isdeleted = 0 ORDER BY fullname""")
+        cursor.execute("""SELECT EmployeeID, FullName FROM Employees WHERE IsDeleted = 0 ORDER BY FullName""")
         managers = cursor.fetchall()
         return render_template("employee/add_employee.html", departments=departments, positions=positions, managers=managers)
     finally:
@@ -245,7 +245,7 @@ def edit_employee(id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("""SELECT * FROM Employees WHERE employeeid = %s AND isdeleted = 0""", (id,))
+        cursor.execute("""SELECT * FROM Employees WHERE EmployeeID = %s AND IsDeleted = 0""", (id,))
         employee = cursor.fetchone()
 
         if not employee:
@@ -272,11 +272,11 @@ def edit_employee(id):
 
             cursor.execute("""
                 UPDATE Employees
-                SET fullname = %s, gender = %s, dob = %s, hiredate = %s, email = %s, phone = %s, 
-                    departmentid = %s, positionid = %s, managerid = %s, status = %s, citizenid = %s, 
-                    address = %s, nationality = %s, maritalstatus = %s, emergencycontact = %s, 
-                    emergencyphone = %s
-                WHERE employeeid = %s 
+                SET FullName = %s, Gender = %s, DOB = %s, HireDate = %s, Email = %s, Phone = %s, 
+                    DepartmentID = %s, PositionID = %s, ManagerID = %s, Status = %s, CitizenID = %s, 
+                    Address = %s, Nationality = %s, MaritalStatus = %s, EmergencyContact = %s, 
+                    EmergencyPhone = %s
+                WHERE EmployeeID = %s 
             """, (fullname, gender, dob, hiredate, email, phone, department_id, position_id, 
                  manager_id, status, citizenid, address, nationality, maritalstatus, 
                  emergencycontact, emergencyphone, id))
@@ -298,7 +298,7 @@ def edit_employee(id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute('SELECT employeeid, fullname FROM Employees WHERE isdeleted = 0 ORDER BY fullname')
+        cursor.execute('SELECT EmployeeID, FullName FROM Employees WHERE IsDeleted = 0 ORDER BY FullName')
         managers = cursor.fetchall()
         return render_template("employee/edit_employee.html", employee=employee, departments=departments, positions=positions, managers=managers)
     finally:
@@ -311,7 +311,7 @@ def delete_employee(id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("UPDATE Employees SET isdeleted = 1 WHERE employeeid = %s", (id,))
+        cursor.execute("UPDATE Employees SET IsDeleted = 1 WHERE EmployeeID = %s", (id,))
         conn.commit()
         flash('Xóa nhân viên thành công!', "success")
         return redirect("/employees")
@@ -330,12 +330,12 @@ def export_employees_csv():
     cursor = conn.cursor()
     try:
         cursor.execute(""" 
-            SELECT E.employeeid, E.fullname, E.gender, E.phone, E.email, D.departmentname, P.positionname, E.status 
+            SELECT E.EmployeeID, E.FullName, E.Gender, E.Phone, E.Email, D.DepartmentName, P.PositionName, E.Status 
             FROM Employees E 
-            LEFT JOIN Departments D ON E.departmentid = D.departmentid AND D.isdeleted = 0
-            LEFT JOIN Positions P ON E.positionid = P.positionid AND P.isdeleted = 0
-            WHERE E.isdeleted = 0
-            ORDER BY E.employeeid 
+            LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
+            LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
+            WHERE E.IsDeleted = 0
+            ORDER BY E.EmployeeID 
         """)
         rows = cursor.fetchall()
 
@@ -365,14 +365,14 @@ def employee_detail(id):
     cursor = conn.cursor()
     try:
         cursor.execute(""" 
-            SELECT E.employeeid, 'NV' || LPAD(CAST(E.employeeid AS TEXT), 4, '0') AS EmployeeCode, 
-                   E.fullname, E.gender, E.dob, E.phone, E.email, E.citizenid, E.address, 
-                   E.nationality, E.maritalstatus, E.emergencycontact, E.emergencyphone, E.hiredate, E.status, 
-                   D.departmentname, P.positionname 
+            SELECT E.EmployeeID, 'NV' || LPAD(CAST(E.EmployeeID AS TEXT), 4, '0') AS EmployeeCode, 
+                   E.FullName, E.Gender, E.DOB, E.Phone, E.Email, E.CitizenID, E.Address, 
+                   E.Nationality, E.MaritalStatus, E.EmergencyContact, E.EmergencyPhone, E.HireDate, E.Status, 
+                   D.DepartmentName, P.PositionName 
             FROM Employees E 
-            LEFT JOIN Departments D ON E.departmentid = D.departmentid AND D.isdeleted = 0
-            LEFT JOIN Positions P ON E.positionid = P.positionid AND P.isdeleted = 0
-            WHERE E.employeeid = %s AND E.isdeleted = 0
+            LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
+            LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
+            WHERE E.EmployeeID = %s AND E.IsDeleted = 0
         """, (id,))
         employee = cursor.fetchone()
 
@@ -400,7 +400,7 @@ def delete_selected_employees():
     cursor = conn.cursor()
     try:
         for emp_id in employee_ids:
-            cursor.execute("UPDATE Employees SET isdeleted = 1 WHERE employeeid = %s", (emp_id,))
+            cursor.execute("UPDATE Employees SET IsDeleted = 1 WHERE EmployeeID = %s", (emp_id,))
         conn.commit()
         flash(f"Đã xóa thành công {len(employee_ids)} nhân viên!", "success")
     except Exception as e:

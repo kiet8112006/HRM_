@@ -20,173 +20,200 @@ def init_database():
         print("[ERROR] Không tìm thấy biến môi trường DATABASE_URL!")
         return
 
-    print("🚀 Đang kết nối và khởi tạo cơ sở dữ liệu PostgreSQL Cloud...")
-    conn = psycopg2.connect(db_url)
+    print("🚀 Đang kết nối và khởi tạo cơ sở dữ liệu PostgreSQL Cloud theo đúng cấu trúc chuẩn...")
+    conn = psycopg2.connect(db_url, sslmode='require')
     cursor = conn.cursor()
 
     try:
-        # 1. TẠO CÁC BẢNG (SCHEMA) VỚI TÊN CỘT CHỮ THƯỜNG HOÀN TOÀN
+        # 1. TẠO CÁC BẢNG (SCHEMA) KHỚP CHÍNH XÁC VỚI CÁC ẢNH CUNG CẤP
         cursor.execute("""
+            -- 1. Users Table
             CREATE TABLE IF NOT EXISTS Users (
-                userid SERIAL PRIMARY KEY,
-                username VARCHAR(50) UNIQUE NOT NULL,
-                passwordhash VARCHAR(255) NOT NULL,
-                fullname VARCHAR(100),
-                email VARCHAR(100),
-                role VARCHAR(20) DEFAULT 'User',
-                isactive BOOLEAN DEFAULT TRUE,
-                createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                lastlogin TIMESTAMP
+                UserID SERIAL PRIMARY KEY,
+                Username VARCHAR(50) NOT NULL,
+                PasswordHash VARCHAR(255) NOT NULL,
+                FullName VARCHAR(100) NOT NULL,
+                Email VARCHAR(100),
+                Role VARCHAR(20) NOT NULL,
+                IsActive BOOLEAN,
+                CreatedAt TIMESTAMP,
+                LastLogin TIMESTAMP
             );
 
-            CREATE TABLE IF NOT EXISTS Departments (
-                departmentid SERIAL PRIMARY KEY,
-                departmentcode VARCHAR(20),
-                departmentname VARCHAR(100) NOT NULL,
-                description TEXT,
-                location VARCHAR(100),
-                managerid INT,
-                status VARCHAR(20) DEFAULT 'Active',
-                isdeleted INT DEFAULT 0
-            );
-
+            -- 2. Positions Table
             CREATE TABLE IF NOT EXISTS Positions (
-                positionid SERIAL PRIMARY KEY,
-                positioncode VARCHAR(20),
-                positionname VARCHAR(100) NOT NULL,
-                description TEXT,
-                status VARCHAR(20) DEFAULT 'Active',
-                isdeleted INT DEFAULT 0
+                PositionID SERIAL PRIMARY KEY,
+                PositionName VARCHAR(100) NOT NULL,
+                Description VARCHAR(255),
+                PositionCode VARCHAR(20),
+                PositionLevel INT,
+                MinSalary NUMERIC(18,2),
+                MaxSalary NUMERIC(18,2),
+                Status VARCHAR(20),
+                IsDeleted SMALLINT
             );
 
+            -- 3. Departments Table (ManagerID FK sẽ được ALTER thêm vào sau để tránh lỗi vòng lặp phụ thuộc với Employees)
+            CREATE TABLE IF NOT EXISTS Departments (
+                DepartmentID SERIAL PRIMARY KEY,
+                DepartmentName VARCHAR(100) NOT NULL,
+                ManagerID INT,
+                DepartmentCode VARCHAR(20),
+                Description VARCHAR(255),
+                Location VARCHAR(100),
+                Status VARCHAR(20),
+                IsDeleted SMALLINT
+            );
+
+            -- 4. Employees Table
             CREATE TABLE IF NOT EXISTS Employees (
-                employeeid SERIAL PRIMARY KEY,
-                fullname VARCHAR(100) NOT NULL,
-                gender VARCHAR(10),
-                dob DATE,
-                hiredate DATE,
-                email VARCHAR(100) UNIQUE,
-                phone VARCHAR(20),
-                departmentid INT REFERENCES Departments(departmentid) ON DELETE SET NULL,
-                positionid INT REFERENCES Positions(positionid) ON DELETE SET NULL,
-                managerid INT,
-                status VARCHAR(20) DEFAULT 'Active',
-                citizenid VARCHAR(20),
-                address TEXT,
-                nationality VARCHAR(50) DEFAULT 'Việt Nam',
-                maritalstatus VARCHAR(20),
-                emergencycontact VARCHAR(100),
-                emergencyphone VARCHAR(20),
-                photo VARCHAR(255),
-                citizenfrontphoto VARCHAR(255),
-                citizenbackphoto VARCHAR(255),
-                isdeleted INT DEFAULT 0
+                EmployeeID SERIAL PRIMARY KEY,
+                FullName VARCHAR(100) NOT NULL,
+                Gender VARCHAR(10),
+                DOB DATE,
+                Email VARCHAR(100),
+                Phone VARCHAR(15),
+                DepartmentID INT REFERENCES Departments(DepartmentID) ON DELETE SET NULL,
+                PositionID INT REFERENCES Positions(PositionID) ON DELETE SET NULL,
+                HireDate DATE,
+                Status VARCHAR(20),
+                EmployeeCode VARCHAR(20),
+                CitizenID VARCHAR(12),
+                Address VARCHAR(255),
+                Nationality VARCHAR(50),
+                MaritalStatus VARCHAR(30),
+                EmergencyContact VARCHAR(100),
+                EmergencyPhone VARCHAR(10),
+                Photo VARCHAR(255),
+                ManagerID INT REFERENCES Employees(EmployeeID) ON DELETE SET NULL,
+                CitizenFrontPhoto VARCHAR(255),
+                CitizenBackPhoto VARCHAR(255),
+                IsDeleted SMALLINT
             );
 
+            -- Thêm lại khóa ngoại ManagerID cho bảng Departments tham chiếu tới Employees
+            DO $$ 
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.table_constraints 
+                    WHERE constraint_name = 'fk_departments_manager'
+                ) THEN
+                    ALTER TABLE Departments 
+                    ADD CONSTRAINT fk_departments_manager 
+                    FOREIGN KEY (ManagerID) REFERENCES Employees(EmployeeID) ON DELETE SET NULL;
+                END IF;
+            END $$;
+
+            -- 5. Attendance Table
+            CREATE TABLE IF NOT EXISTS Attendance (
+                AttendanceID SERIAL PRIMARY KEY,
+                EmployeeID INT NOT NULL REFERENCES Employees(EmployeeID) ON DELETE CASCADE,
+                Date DATE NOT NULL,
+                CheckInTime TIME,
+                CheckOutTime TIME,
+                Status VARCHAR(50),
+                ShiftID INT,
+                WorkingHours NUMERIC(5,2),
+                OvertimeHours NUMERIC(5,2),
+                LateMinutes INT,
+                EarlyLeaveMinutes INT,
+                CheckInMethod VARCHAR(30),
+                ApprovalStatus VARCHAR(30),
+                Notes VARCHAR(255),
+                IsDeleted INT
+            );
+
+            -- 6. AuditLogs Table
+            CREATE TABLE IF NOT EXISTS AuditLogs (
+                LogID SERIAL PRIMARY KEY,
+                UserID INT NOT NULL,
+                Username VARCHAR(50) NOT NULL,
+                Role VARCHAR(30) NOT NULL,
+                Module VARCHAR(50) NOT NULL,
+                Action VARCHAR(30) NOT NULL,
+                RecordID INT,
+                Description VARCHAR(500) NOT NULL,
+                IPAddress VARCHAR(50),
+                UserAgent VARCHAR(300),
+                CreatedAt TIMESTAMP NOT NULL
+            );
+
+            -- 7. Contracts Table
+            CREATE TABLE IF NOT EXISTS Contracts (
+                ContractID SERIAL PRIMARY KEY,
+                EmployeeID INT NOT NULL REFERENCES Employees(EmployeeID) ON DELETE CASCADE,
+                ContractType VARCHAR(100),
+                StartDate DATE,
+                EndDate DATE,
+                Status VARCHAR(50),
+                ContractCode VARCHAR(20),
+                ContractNumber VARCHAR(50),
+                BasicSalary NUMERIC(18,2),
+                WorkLocation VARCHAR(200),
+                DepartmentID INT REFERENCES Departments(DepartmentID) ON DELETE SET NULL,
+                PositionID INT REFERENCES Positions(PositionID) ON DELETE SET NULL,
+                Signer VARCHAR(100),
+                SignDate DATE,
+                ProbationMonths INT,
+                ContractFile VARCHAR(255),
+                Description VARCHAR(500),
+                IsDeleted SMALLINT
+            );
+
+            -- 8. LeaveRequests Table
+            CREATE TABLE IF NOT EXISTS LeaveRequests (
+                RequestID SERIAL PRIMARY KEY,
+                EmployeeID INT NOT NULL REFERENCES Employees(EmployeeID) ON DELETE CASCADE,
+                FromDate DATE,
+                ToDate DATE,
+                Reason VARCHAR(500),
+                Status VARCHAR(50),
+                LeaveCode VARCHAR(20),
+                TotalDays INT,
+                Attachment VARCHAR(255),
+                AppliedDate DATE,
+                ApprovedBy VARCHAR(100),
+                ApprovedDate DATE,
+                Description VARCHAR(255),
+                LeaveType VARCHAR(50),
+                IsDeleted SMALLINT
+            );
+
+            -- 9. Notifications Table
+            CREATE TABLE IF NOT EXISTS Notifications (
+                NotificationID SERIAL PRIMARY KEY,
+                Title VARCHAR(200) NOT NULL,
+                Message VARCHAR(500) NOT NULL,
+                Type VARCHAR(30) NOT NULL,
+                ReceiverRole VARCHAR(30),
+                ReceiverID INT,
+                Url VARCHAR(255),
+                IsRead BOOLEAN,
+                CreatedAt TIMESTAMP
+            );
+
+            -- 10. Salaries Table
             CREATE TABLE IF NOT EXISTS Salaries (
-                salaryid SERIAL PRIMARY KEY,
-                employeeid INT REFERENCES Employees(employeeid) ON DELETE CASCADE,
-                basesalary DECIMAL(12, 2) DEFAULT 0,
-                bonus DECIMAL(12, 2) DEFAULT 0,
-                allowance DECIMAL(12, 2) DEFAULT 0,
+                SalaryID SERIAL PRIMARY KEY,
+                EmployeeID INT NOT NULL REFERENCES Employees(EmployeeID) ON DELETE CASCADE,
+                BaseSalary NUMERIC(18,2),
+                Bonus NUMERIC(18,2),
+                Allowance NUMERIC(18,2),
                 month INT,
                 year INT,
-                salarycode VARCHAR(50),
-                overtimepay DECIMAL(12, 2) DEFAULT 0,
-                deduction DECIMAL(12, 2) DEFAULT 0,
-                tax DECIMAL(12, 2) DEFAULT 0,
-                insurance DECIMAL(12, 2) DEFAULT 0,
-                netsalary DECIMAL(12, 2) DEFAULT 0,
-                paymentdate DATE,
-                status VARCHAR(30) DEFAULT 'Chưa thanh toán',
-                notes TEXT,
-                isdeleted INT DEFAULT 0
-            );
-
-            CREATE TABLE IF NOT EXISTS Contracts (
-                contractid SERIAL PRIMARY KEY,
-                employeeid INT REFERENCES Employees(employeeid) ON DELETE CASCADE,
-                contracttype VARCHAR(50),
-                startdate DATE,
-                enddate DATE,
-                status VARCHAR(30),
-                contractcode VARCHAR(50),
-                contractnumber VARCHAR(50),
-                basicsalary DECIMAL(12, 2),
-                worklocation TEXT,
-                departmentid INT,
-                positionid INT,
-                signer VARCHAR(100),
-                signdate DATE,
-                probationmonths INT DEFAULT 0,
-                contractfile VARCHAR(255),
-                description TEXT,
-                isdeleted INT DEFAULT 0
-            );
-
-            CREATE TABLE IF NOT EXISTS LeaveRequests (
-                leaveid SERIAL PRIMARY KEY,
-                employeeid INT REFERENCES Employees(employeeid) ON DELETE CASCADE,
-                fromdate DATE,
-                todate DATE,
-                reason TEXT,
-                status VARCHAR(30) DEFAULT 'Chờ duyệt',
-                leavecode VARCHAR(50),
-                totaldays INT,
-                attachment VARCHAR(255),
-                applieddate DATE,
-                approvedby VARCHAR(100),
-                approveddate DATE,
-                description TEXT,
-                leavetype VARCHAR(50),
-                isdeleted INT DEFAULT 0
-            );
-
-            CREATE TABLE IF NOT EXISTS Attendance (
-                attendanceid SERIAL PRIMARY KEY,
-                employeeid INT REFERENCES Employees(employeeid) ON DELETE CASCADE,
-                date DATE,
-                checkintime TIME,
-                checkouttime TIME,
-                status VARCHAR(30),
-                shiftid INT DEFAULT 1,
-                workinghours DECIMAL(4, 2) DEFAULT 0,
-                overtimehours DECIMAL(4, 2) DEFAULT 0,
-                lateminutes INT DEFAULT 0,
-                earlyleaveminutes INT DEFAULT 0,
-                checkinmethod VARCHAR(30),
-                approvalstatus VARCHAR(30),
-                notes TEXT,
-                isdeleted INT DEFAULT 0
-            );
-
-            CREATE TABLE IF NOT EXISTS Notifications (
-                notificationid SERIAL PRIMARY KEY,
-                title VARCHAR(200) NOT NULL,
-                message TEXT NOT NULL,
-                type VARCHAR(30) DEFAULT 'Info',
-                receiverrole VARCHAR(20),
-                receiverid INT,
-                url VARCHAR(255),
-                isread INT DEFAULT 0,
-                createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS AuditLogs (
-                logid SERIAL PRIMARY KEY,
-                userid INT,
-                username VARCHAR(50),
-                role VARCHAR(20),
-                module VARCHAR(50),
-                action VARCHAR(30),
-                recordid INT,
-                description TEXT,
-                ipaddress VARCHAR(50),
-                useragent TEXT,
-                createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                SalaryCode VARCHAR(20),
+                OvertimePay NUMERIC(18,2),
+                Deduction NUMERIC(18,2),
+                Tax NUMERIC(18,2),
+                Insurance NUMERIC(18,2),
+                NetSalary NUMERIC(18,2),
+                PaymentDate DATE,
+                Status VARCHAR(20),
+                Notes VARCHAR(255),
+                IsDeleted SMALLINT
             );
         """)
-        print("✅ Đã tạo cấu trúc các bảng thành công với tên cột chuẩn chữ thường.")
+        print("✅ Đã tạo toàn bộ cấu trúc các bảng chuẩn theo đúng các hình ảnh mẫu.")
 
         # 2. SEED USERS
         cursor.execute("SELECT COUNT(*) FROM Users;")
@@ -194,77 +221,87 @@ def init_database():
             for u in DEFAULT_USERS:
                 pass_hash = generate_password_hash(u["Password"])
                 cursor.execute("""
-                    INSERT INTO Users (username, passwordhash, fullname, email, role, isactive)
-                    VALUES (%s, %s, %s, %s, %s, %s);
+                    INSERT INTO Users (Username, PasswordHash, FullName, Email, Role, IsActive, CreatedAt)
+                    VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP);
                 """, (u["Username"], pass_hash, u["FullName"], u["Email"], u["Role"], u["IsActive"]))
-            print("-> Đã khởi tạo danh sách Users mẫu.")
+            print("-> Đã khởi tạo dữ liệu mẫu cho bảng Users.")
 
-        # 3. SEED DEPARTMENTS
-        cursor.execute("SELECT COUNT(*) FROM Departments;")
-        if cursor.fetchone()[0] == 0:
-            for i, dept in enumerate(DEPARTMENTS, 1):
-                cursor.execute("""
-                    INSERT INTO Departments (departmentname, departmentcode, description, location, status)
-                    VALUES (%s, %s, %s, %s, %s);
-                """, (dept, f"DP{i:03d}", f"Mô tả cho {dept}", "TP. Hồ Chí Minh", "Active"))
-            print("-> Đã khởi tạo Phòng ban mẫu.")
-
-        # 4. SEED POSITIONS
+        # 3. SEED POSITIONS
         cursor.execute("SELECT COUNT(*) FROM Positions;")
         if cursor.fetchone()[0] == 0:
             for i, pos in enumerate(POSITIONS, 1):
                 cursor.execute("""
-                    INSERT INTO Positions (positionname, positioncode, description, status)
-                    VALUES (%s, %s, %s, %s);
-                """, (pos, f"POS{i:03d}", f"Mô tả chức vụ {pos}", "Hoạt động"))
-            print("-> Đã khởi tạo Chức vụ mẫu.")
+                    INSERT INTO Positions (PositionName, PositionCode, Description, PositionLevel, MinSalary, MaxSalary, Status, IsDeleted)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, 0);
+                """, (pos, f"POS{i:03d}", f"Mô tả chức vụ {pos}", i, 5000000.0, 30000000.0, "Active"))
+            print("-> Đã khởi tạo dữ liệu mẫu cho bảng Positions.")
+
+        # 4. SEED DEPARTMENTS
+        cursor.execute("SELECT COUNT(*) FROM Departments;")
+        if cursor.fetchone()[0] == 0:
+            for i, dept in enumerate(DEPARTMENTS, 1):
+                cursor.execute("""
+                    INSERT INTO Departments (DepartmentName, DepartmentCode, Description, Location, Status, IsDeleted)
+                    VALUES (%s, %s, %s, %s, %s, 0);
+                """, (dept, f"DP{i:03d}", f"Mô tả cho {dept}", "TP. Hồ Chí Minh", "Active"))
+            print("-> Đã khởi tạo dữ liệu mẫu cho bảng Departments.")
 
         # 5. SEED EMPLOYEES
         cursor.execute("SELECT COUNT(*) FROM Employees;")
         if cursor.fetchone()[0] == 0:
-            cursor.execute("SELECT departmentid FROM Departments;")
+            cursor.execute("SELECT DepartmentID FROM Departments;")
             dept_ids = [r[0] for r in cursor.fetchall()]
-            cursor.execute("SELECT positionid FROM Positions;")
+            cursor.execute("SELECT PositionID FROM Positions;")
             pos_ids = [r[0] for r in cursor.fetchall()]
 
             sample_employees = [
-                ("Nguyễn Văn An", "Nam", "1992-05-10", "2021-01-15", "an.nguyen@hrm.com", "0901234567", dept_ids[0], pos_ids[1], "284729103847", "123 Lê Lợi, Q1, TP.HCM"),
-                ("Trần Thị Bích", "Nữ", "1995-08-20", "2021-03-20", "bich.tran@hrm.com", "0912345678", dept_ids[1], pos_ids[5], "384729103848", "456 Nguyễn Huệ, Q1, TP.HCM"),
-                ("Lê Hoàng Nam", "Nam", "1990-12-02", "2020-06-01", "nam.le@hrm.com", "0923456789", dept_ids[0], pos_ids[4], "484729103849", "789 Cách Mạng Tháng 8, Q3, TP.HCM"),
-                ("Phạm Minh Tuấn", "Nam", "1998-03-15", "2022-09-10", "tuan.pham@hrm.com", "0934567890", dept_ids[2], pos_ids[6], "584729103850", "12 Hoàng Văn Thụ, Q.Phú Nhuận, TP.HCM")
+                ("Nguyễn Văn An", "Nam", "1992-05-10", "an.nguyen@hrm.com", "0901234567", dept_ids[0], pos_ids[1], "2021-01-15", "Active", "EMP001", "284729103847", "123 Lê Lợi, Q1, TP.HCM", "Việt Nam", "Độc thân", "Nguyễn Thị Hoa", "0909123456"),
+                ("Trần Thị Bích", "Nữ", "1995-08-20", "bich.tran@hrm.com", "0912345678", dept_ids[1], pos_ids[5], "2021-03-20", "Active", "EMP002", "384729103848", "456 Nguyễn Huệ, Q1, TP.HCM", "Việt Nam", "Đã kết hôn", "Trần Văn Minh", "0909234567"),
+                ("Lê Hoàng Nam", "Nam", "1990-12-02", "nam.le@hrm.com", "0923456789", dept_ids[0], pos_ids[4], "2020-06-01", "Active", "EMP003", "484729103849", "789 Cách Mạng Tháng 8, Q3, TP.HCM", "Việt Nam", "Độc thân", "Lê Thị Mai", "0909345678"),
+                ("Phạm Minh Tuấn", "Nam", "1998-03-15", "tuan.pham@hrm.com", "0934567890", dept_ids[2], pos_ids[6], "2022-09-10", "Active", "EMP004", "584729103850", "12 Hoàng Văn Thụ, Q.Phú Nhuận, TP.HCM", "Việt Nam", "Độc thân", "Phạm Văn Hùng", "0909456789")
             ]
 
             for emp in sample_employees:
                 cursor.execute("""
-                    INSERT INTO Employees (fullname, gender, dob, hiredate, email, phone, departmentid, positionid, citizenid, address)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+                    INSERT INTO Employees (
+                        FullName, Gender, DOB, Email, Phone, DepartmentID, PositionID, 
+                        HireDate, Status, EmployeeCode, CitizenID, Address, Nationality, 
+                        MaritalStatus, EmergencyContact, EmergencyPhone, IsDeleted
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0);
                 """, emp)
-            print("-> Đã khởi tạo Danh sách Nhân viên mẫu.")
+            print("-> Đã khởi tạo dữ liệu mẫu cho bảng Employees.")
 
         # 6. SEED SALARIES & CONTRACTS
-        cursor.execute("SELECT employeeid FROM Employees;")
+        cursor.execute("SELECT EmployeeID FROM Employees;")
         emp_ids = [r[0] for r in cursor.fetchall()]
 
         cursor.execute("SELECT COUNT(*) FROM Salaries;")
         if cursor.fetchone()[0] == 0 and emp_ids:
             for eid in emp_ids:
                 cursor.execute("""
-                    INSERT INTO Salaries (employeeid, basesalary, bonus, allowance, month, year, salarycode, netsalary, status)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
-                """, (eid, 15000000.0, 2000000.0, 1000000.0, 7, 2026, f"SAL-202607-{eid:04d}", 16500000.0, "Đã thanh toán"))
-            print("-> Đã khởi tạo Bảng lương mẫu.")
+                    INSERT INTO Salaries (
+                        EmployeeID, BaseSalary, Bonus, Allowance, month, year, 
+                        SalaryCode, NetSalary, Status, IsDeleted
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 0);
+                """, (eid, 15000000.0, 2000000.0, 1000000.0, 7, 2026, f"SAL-202607-{eid:04d}", 18000000.0, "Đã thanh toán"))
+            print("-> Đã khởi tạo dữ liệu mẫu cho bảng Salaries.")
 
         cursor.execute("SELECT COUNT(*) FROM Contracts;")
         if cursor.fetchone()[0] == 0 and emp_ids:
             for i, eid in enumerate(emp_ids, 1):
                 cursor.execute("""
-                    INSERT INTO Contracts (employeeid, contracttype, startdate, status, contractcode, contractnumber, basicsalary)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s);
-                """, (eid, "Không xác định thời hạn", "2022-01-01", "Hiệu lực", f"HD-{i:05d}", f"HDLD/2026/{i:04d}", 15000000.0))
-            print("-> Đã khởi tạo Hợp đồng lao động mẫu.")
+                    INSERT INTO Contracts (
+                        EmployeeID, ContractType, StartDate, EndDate, Status, 
+                        ContractCode, ContractNumber, BasicSalary, IsDeleted
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 0);
+                """, (eid, "Không xác định thời hạn", "2022-01-01", None, "Hiệu lực", f"HD-{i:05d}", f"HDLD/2026/{i:04d}", 15000000.0))
+            print("-> Đã khởi tạo dữ liệu mẫu cho bảng Contracts.")
 
         conn.commit()
-        print("🎉 TẤT CẢ DỮ LIỆU ĐÃ ĐƯỢC SEED THÀNH CÔNG VÀO POSTGRESQL CLOUD!")
+        print("🎉 TẤT CẢ CÁC BẢNG VÀ DỮ LIỆU ĐÃ ĐƯỢC CẬP NHẬT CHÍNH XÁC THÀNH CÔNG!")
 
     except Exception as e:
         conn.rollback()
