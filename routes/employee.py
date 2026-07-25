@@ -161,13 +161,17 @@ def employees():
 # =====================================================================
 # 2. ROUTE: THÊM MỚI NHÂN VIÊN
 # =====================================================================
+# =====================================================================
+# 2. ROUTE: THÊM MỚI NHÂN VIÊN
+# =====================================================================
 @employee_bp.route("/add_employee", methods=["GET", "POST"])
 @login_required
 @role_required('Admin')
 def add_employee():
+    conn = get_connection()
+    cursor = conn.cursor()
+    
     if request.method == "POST":
-        conn = get_connection()
-        cursor = conn.cursor()
         try:
             photo = request.files.get('photo')
             citizen_front = request.files.get('citizen_front')
@@ -258,6 +262,7 @@ def add_employee():
             return redirect("/employees")
 
         except EmployeeValidationError as e:
+            conn.rollback()
             flash(str(e), 'danger')
             return redirect(request.url)
         except Exception as e:
@@ -268,11 +273,9 @@ def add_employee():
         finally:
             conn.close()
 
-    departments = get_cached_departments()
-    positions = get_cached_positions()
-    conn = get_connection()
-    cursor = conn.cursor()
     try:
+        departments = get_cached_departments()
+        positions = get_cached_positions()
         cursor.execute("""SELECT EmployeeID, FullName FROM Employees WHERE IsDeleted = 0 ORDER BY FullName""")
         managers = cursor.fetchall()
         return render_template(
@@ -283,7 +286,6 @@ def add_employee():
         )
     finally:
         conn.close()
-
 
 # =====================================================================
 # 3. ROUTE: CHỈNH SỬA THÔNG TIN NHÂN VIÊN
