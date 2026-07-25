@@ -66,6 +66,9 @@ app.register_blueprint(audit_bp)
 app.register_blueprint(notification_bp)
 app.config["UPLOAD_FOLDER"] = config.UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = config.MAX_CONTENT_LENGTH
+@app.route('/')
+def index():
+    return redirect(url_for('auth.login'))
 @app.context_processor
 def inject_notification_count():
     unread_count = 0
