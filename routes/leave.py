@@ -21,18 +21,27 @@ leave_bp = Blueprint("leave", __name__)
 
 # --- HÀM HỖ TRỢ LẤY DANH SÁCH NHÂN VIÊN CÓ CACHE ---
 def get_cached_active_employees():
-    from app import cache
-    @cache.cached(timeout=60, key_prefix='leave_employees_list')
-    def query_db():
+    try:
+        from app import cache
+        @cache.cached(timeout=60, key_prefix='leave_employees_list')
+        def query_db():
+            conn = get_connection()
+            cursor = conn.cursor()
+            try:
+                cursor.execute("SELECT EmployeeID, FullName FROM Employees WHERE IsDeleted = 0 ORDER BY FullName")
+                data = cursor.fetchall()
+                return data
+            finally:
+                conn.close()
+        return query_db()
+    except Exception:
         conn = get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute("SELECT EmployeeID, FullName FROM Employees WHERE IsDeleted = 0 ORDER BY FullName")
-            data = cursor.fetchall()
-            return data
+            return cursor.fetchall()
         finally:
             conn.close()
-    return query_db()
 
 
 # =====================================================================
@@ -53,32 +62,34 @@ def leave_requests():
     conn = get_connection()
     cursor = conn.cursor()
     try:
+        # Dùng ILIKE và COALESCE thay cho LIKE và ISNULL
         cursor.execute(""" 
             SELECT COUNT(*) 
             FROM LeaveRequests L 
             INNER JOIN Employees E ON L.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
             WHERE L.IsDeleted = 0 
-              AND E.FullName LIKE ? 
-              AND L.Status LIKE ? 
-              AND ISNULL(L.LeaveType,'') LIKE ? 
+              AND E.FullName ILIKE %s 
+              AND L.Status ILIKE %s 
+              AND COALESCE(L.LeaveType, '') ILIKE %s 
         """, (f"%{keyword}%", f"%{status}%", f'%{leave_type}%'))
         total_records = cursor.fetchone()[0]
 
+        # Phép trừ ngày trực tiếp (L.ToDate - L.FromDate) + 1 thay cho DATEDIFF
+        # Phân trang dùng LIMIT %s OFFSET %s
         cursor.execute("""
             SELECT
                 L.RequestID, E.FullName, L.LeaveType, L.FromDate, L.ToDate, 
-                DATEDIFF(day, L.FromDate, L.ToDate) + 1 AS TotalDays, 
+                (L.ToDate - L.FromDate) + 1 AS TotalDays, 
                 L.Reason, L.Status, L.ApprovedBy, L.ApprovedDate
             FROM LeaveRequests L
             INNER JOIN Employees E ON L.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
             WHERE L.IsDeleted = 0 
-              AND E.FullName LIKE ?
-              AND L.Status LIKE ? 
-              AND ISNULL(L.LeaveType,'') LIKE ?
+              AND E.FullName ILIKE %s
+              AND L.Status ILIKE %s 
+              AND COALESCE(L.LeaveType, '') ILIKE %s
             ORDER BY L.RequestID DESC 
-            OFFSET ? ROWS 
-            FETCH NEXT ? ROWS ONLY 
-        """, (f"%{keyword}%", f"%{status}%", f'%{leave_type}%', offset, per_page))
+            LIMIT %s OFFSET %s
+        """, (f"%{keyword}%", f"%{status}%", f'%{leave_type}%', per_page, offset))
         requests = cursor.fetchall()
         
         total_pages = max(1, (total_records + per_page - 1) // per_page)
@@ -113,7 +124,7 @@ def add_leave_request():
         try:
             employee_id = request.form.get("employee_id")
             
-            cursor.execute('SELECT FullName FROM Employees WHERE EmployeeID = ? AND IsDeleted = 0', employee_id)
+            cursor.execute('SELECT FullName FROM Employees WHERE EmployeeID = %s AND IsDeleted = 0', (employee_id,))
             emp_row = cursor.fetchone()
             if not emp_row:
                 raise LeaveValidationError('Nhân viên không tồn tại hoặc đã bị xóa!')
@@ -132,12 +143,13 @@ def add_leave_request():
             # Kiểm tra trùng lịch nghỉ phép
             cursor.execute("""
                 SELECT COUNT(*) FROM LeaveRequests 
-                WHERE IsDeleted = 0 AND EmployeeID = ? AND (FromDate <= ? AND ToDate >= ?)
-            """, employee_id, to_date, from_date)
+                WHERE IsDeleted = 0 AND EmployeeID = %s AND (FromDate <= %s AND ToDate >= %s)
+            """, (employee_id, to_date, from_date))
             if cursor.fetchone()[0] > 0:
                 raise LeaveValidationError('Nhân viên đã có đơn nghỉ phép trùng trong khoảng thời gian này!')
 
-            cursor.execute("SELECT ISNULL(MAX(RequestID), 0) + 1 FROM LeaveRequests")
+            # COALESCE thay ISNULL
+            cursor.execute("SELECT COALESCE(MAX(RequestID), 0) + 1 FROM LeaveRequests")
             next_id = cursor.fetchone()[0]
             leave_code = f"LR{next_id:04d}"
 
@@ -151,8 +163,8 @@ def add_leave_request():
             cursor.execute("""
                 INSERT INTO LeaveRequests
                 (LeaveCode, EmployeeID, LeaveType, FromDate, ToDate, TotalDays, Reason, RequestDate, CreatedBy, ApprovedBy, ApprovedDate, RejectReason, Status, IsDeleted)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
-            """, leave_code, employee_id, leave_type, from_date, to_date, total_days, reason, request_date, created_by, approved_by, approved_date, reject_reason, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0)
+            """, (leave_code, employee_id, leave_type, from_date, to_date, total_days, reason, request_date, created_by, approved_by, approved_date, reject_reason, status))
 
             conn.commit()
 
@@ -199,7 +211,7 @@ def edit_leave_request(id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute('SELECT * FROM LeaveRequests WHERE RequestID = ? AND IsDeleted = 0', id)
+        cursor.execute('SELECT * FROM LeaveRequests WHERE RequestID = %s AND IsDeleted = 0', (id,))
         request_data = cursor.fetchone()
 
         if not request_data:
@@ -208,7 +220,7 @@ def edit_leave_request(id):
 
         if request.method == "POST":
             employee_id = request.form.get("employee_id")
-            cursor.execute('SELECT FullName FROM Employees WHERE EmployeeID = ? AND IsDeleted = 0', employee_id)
+            cursor.execute('SELECT FullName FROM Employees WHERE EmployeeID = %s AND IsDeleted = 0', (employee_id,))
             emp_row = cursor.fetchone()
             if not emp_row:
                 raise LeaveValidationError('Nhân viên không tồn tại hoặc đã bị xóa!')
@@ -233,8 +245,8 @@ def edit_leave_request(id):
             # Kiểm tra trùng lịch ngoại trừ đơn hiện tại
             cursor.execute("""
                 SELECT COUNT(*) FROM LeaveRequests 
-                WHERE IsDeleted = 0 AND EmployeeID = ? AND (FromDate <= ? AND ToDate >= ?) AND RequestID <> ?
-            """, employee_id, to_date, from_date, id)
+                WHERE IsDeleted = 0 AND EmployeeID = %s AND (FromDate <= %s AND ToDate >= %s) AND RequestID <> %s
+            """, (employee_id, to_date, from_date, id))
             if cursor.fetchone()[0] > 0:
                 raise LeaveValidationError('Đơn nghỉ phép trùng khoảng thời gian với đơn khác!')
 
@@ -252,10 +264,10 @@ def edit_leave_request(id):
 
             cursor.execute("""
                 UPDATE LeaveRequests
-                SET EmployeeID = ?, LeaveType = ?, FromDate = ?, ToDate = ?, TotalDays = ?, Reason = ?, 
-                    ApprovedBy = ?, ApprovedDate = ?, RejectReason = ?, Status = ?
-                WHERE RequestID = ?
-            """, employee_id, leave_type, from_date, to_date, total_days, reason, approved_by, approved_date, reject_reason, status, id)
+                SET EmployeeID = %s, LeaveType = %s, FromDate = %s, ToDate = %s, TotalDays = %s, Reason = %s, 
+                    ApprovedBy = %s, ApprovedDate = %s, RejectReason = %s, Status = %s
+                WHERE RequestID = %s
+            """, (employee_id, leave_type, from_date, to_date, total_days, reason, approved_by, approved_date, reject_reason, status, id))
 
             conn.commit()
 
@@ -312,8 +324,8 @@ def delete_leave_request(id):
         cursor.execute("""
             SELECT E.FullName FROM LeaveRequests L 
             INNER JOIN Employees E ON L.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
-            WHERE L.RequestID = ? AND L.IsDeleted = 0
-        """, id)
+            WHERE L.RequestID = %s AND L.IsDeleted = 0
+        """, (id,))
         emp_row = cursor.fetchone()
         
         if not emp_row:
@@ -322,7 +334,7 @@ def delete_leave_request(id):
             
         emp_name = emp_row[0]
 
-        cursor.execute("UPDATE LeaveRequests SET IsDeleted = 1 WHERE RequestID = ?", id)
+        cursor.execute("UPDATE LeaveRequests SET IsDeleted = 1 WHERE RequestID = %s", (id,))
         conn.commit()
 
         create_notification(
@@ -366,7 +378,7 @@ def delete_selected_leave_requests():
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        placeholders = ', '.join(['?'] * len(request_ids))
+        placeholders = ', '.join(['%s'] * len(request_ids))
         
         query_info = f"""
             SELECT L.RequestID, E.FullName FROM LeaveRequests L
@@ -382,11 +394,13 @@ def delete_selected_leave_requests():
             cursor.execute(query_delete, tuple(request_ids))
             
             for row in records:
+                req_id = row[0] if isinstance(row, tuple) else row.RequestID
+                emp_name = row[1] if isinstance(row, tuple) else row.FullName
                 log_activity(
                     module="Leave",
                     action="Delete",
-                    record_id=int(row[0]),
-                    description=f"Soft deleted leave request of employee {row[1]}."
+                    record_id=int(req_id),
+                    description=f"Soft deleted leave request of employee {emp_name}."
                 )
                 
             conn.commit()
@@ -443,10 +457,13 @@ def export_leave_requests_csv():
         ])
 
         for row in rows:
-            writer.writerow([
-                row.RequestID, row.LeaveCode, row.FullName, row.LeaveType, row.FromDate, row.ToDate,
-                row.TotalDays, row.Reason, row.Status, row.ApprovedBy, row.ApprovedDate, row.RejectReason
-            ])
+            if isinstance(row, tuple):
+                writer.writerow(list(row))
+            else:
+                writer.writerow([
+                    row.RequestID, row.LeaveCode, row.FullName, row.LeaveType, row.FromDate, row.ToDate,
+                    row.TotalDays, row.Reason, row.Status, row.ApprovedBy, row.ApprovedDate, row.RejectReason
+                ])
 
         log_activity(
             module="Leave",

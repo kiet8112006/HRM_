@@ -31,32 +31,52 @@ employee_bp = Blueprint("employee", __name__)
 
 # --- CÁC HÀM HỖ TRỢ LẤY DANH MỤC CÓ CACHE ---
 def get_cached_departments():
-    from app import cache
-    @cache.cached(timeout=60, key_prefix='departments_list')
-    def query_db():
+    try:
+        from app import cache
+        @cache.cached(timeout=60, key_prefix='departments_list')
+        def query_db():
+            conn = get_connection()
+            cursor = conn.cursor()
+            try:
+                cursor.execute("SELECT DepartmentID, DepartmentName FROM Departments WHERE IsDeleted = 0 ORDER BY DepartmentName")
+                data = cursor.fetchall()
+                return data
+            finally:
+                conn.close()
+        return query_db()
+    except Exception:
+        # Fallback nếu cache chưa cấu hình
         conn = get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute("SELECT DepartmentID, DepartmentName FROM Departments WHERE IsDeleted = 0 ORDER BY DepartmentName")
-            data = cursor.fetchall()
-            return data
+            return cursor.fetchall()
         finally:
             conn.close()
-    return query_db()
 
 def get_cached_positions():
-    from app import cache
-    @cache.cached(timeout=60, key_prefix='positions_list')
-    def query_db():
+    try:
+        from app import cache
+        @cache.cached(timeout=60, key_prefix='positions_list')
+        def query_db():
+            conn = get_connection()
+            cursor = conn.cursor()
+            try:
+                cursor.execute("SELECT PositionID, PositionName FROM Positions WHERE IsDeleted = 0 ORDER BY PositionName")
+                data = cursor.fetchall()
+                return data
+            finally:
+                conn.close()
+        return query_db()
+    except Exception:
+        # Fallback nếu cache chưa cấu hình
         conn = get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute("SELECT PositionID, PositionName FROM Positions WHERE IsDeleted = 0 ORDER BY PositionName")
-            data = cursor.fetchall()
-            return data
+            return cursor.fetchall()
         finally:
             conn.close()
-    return query_db()
 
 
 # =====================================================================
@@ -81,22 +101,24 @@ def employees():
     conn = get_connection()
     cursor = conn.cursor()
     try:
+        # Đếm tổng số bản ghi (PostgreSQL dùng %s)
         cursor.execute("""
             SELECT COUNT(*) 
             FROM Employees E 
-            INNER JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
-            INNER JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
+            LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
+            LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
             WHERE E.IsDeleted = 0
-              AND E.FullName LIKE ?
-              AND D.DepartmentName LIKE ?
-              AND P.PositionName LIKE ?
-              AND E.Status LIKE ?
+              AND E.FullName ILIKE %s
+              AND COALESCE(D.DepartmentName, '') ILIKE %s
+              AND COALESCE(P.PositionName, '') ILIKE %s
+              AND E.Status ILIKE %s
         """, (f"%{keyword}%", f"%{department}%", f"%{position}%", f"%{status}%"))
         total_records = cursor.fetchone()[0]
 
+        # Truy vấn danh sách có phân trang bằng LIMIT & OFFSET chuẩn PostgreSQL
         cursor.execute("""
             SELECT E.EmployeeID,
-                   E.EmployeeCode,
+                   COALESCE(E.CitizenID, 'NV' || LPAD(E.EmployeeID::text, 4, '0')) AS EmployeeCode,
                    E.FullName, 
                    E.Photo,
                    E.Gender,
@@ -106,17 +128,16 @@ def employees():
                    D.DepartmentName,
                    P.PositionName
             FROM Employees E
-            INNER JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
-            INNER JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
+            LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
+            LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
             WHERE E.IsDeleted = 0
-              AND E.FullName LIKE ? 
-              AND D.DepartmentName LIKE ?
-              AND P.PositionName LIKE ?
-              AND E.Status LIKE ?
+              AND E.FullName ILIKE %s 
+              AND COALESCE(D.DepartmentName, '') ILIKE %s
+              AND COALESCE(P.PositionName, '') ILIKE %s
+              AND E.Status ILIKE %s
             ORDER BY E.EmployeeID DESC
-            OFFSET ? ROWS
-            FETCH NEXT ? ROWS ONLY
-        """, (f"%{keyword}%", f"%{department}%", f"%{position}%", f"%{status}%", offset, per_page))
+            LIMIT %s OFFSET %s
+        """, (f"%{keyword}%", f"%{department}%", f"%{position}%", f"%{status}%", per_page, offset))
         employees_list = cursor.fetchall()
      
         total_pages = (total_records + per_page - 1) // per_page
@@ -186,7 +207,7 @@ def add_employee():
             citizenid = normalize_citizenid(request.form['citizenid'])
             validate_citizenid(citizenid)
 
-            cursor.execute("SELECT COUNT(*) FROM Employees WHERE CitizenID = ? AND IsDeleted = 0", citizenid)
+            cursor.execute("SELECT COUNT(*) FROM Employees WHERE CitizenID = %s AND IsDeleted = 0", (citizenid,))
             if cursor.fetchone()[0] > 0:
                 raise EmployeeValidationError('CCCD đã tồn tại!')
 
@@ -203,13 +224,13 @@ def add_employee():
             emergencyphone = normalize_phone(request.form['emergencyphone'])
             validate_emergency_phone(emergencyphone)
 
-            cursor.execute("SELECT COUNT(*) FROM Employees WHERE Email = ? AND IsDeleted = 0", email)
+            cursor.execute("SELECT COUNT(*) FROM Employees WHERE Email = %s AND IsDeleted = 0", (email,))
             if cursor.fetchone()[0] > 0:
                 raise EmployeeValidationError('Email đã tồn tại!')
 
             phone = normalize_phone(request.form["phone"])
             validate_phone(phone)
-            cursor.execute("SELECT COUNT(*) FROM Employees WHERE Phone = ? AND IsDeleted = 0", phone)
+            cursor.execute("SELECT COUNT(*) FROM Employees WHERE Phone = %s AND IsDeleted = 0", (phone,))
             if cursor.fetchone()[0] > 0:
                 raise EmployeeValidationError('Số điện thoại đã tồn tại!')
 
@@ -229,10 +250,10 @@ def add_employee():
                     ManagerID, Status, CitizenID, Address, Nationality, MaritalStatus, 
                     EmergencyContact, EmergencyPhone, Photo, CitizenFrontPhoto, CitizenBackPhoto, IsDeleted
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
-            """, fullname, gender, dob, hiredate, email, phone, department_id, position_id, 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0)
+            """, (fullname, gender, dob, hiredate, email, phone, department_id, position_id, 
                  manager_id, status, citizenid, address, nationality, maritalstatus, 
-                 emergencycontact, emergencyphone, photo_filename, citizen_front_filename, citizen_back_filename)
+                 emergencycontact, emergencyphone, photo_filename, citizen_front_filename, citizen_back_filename))
             
             conn.commit()
             create_notification(title='Nhân viên mới', 
@@ -283,7 +304,7 @@ def edit_employee(id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("""SELECT * FROM Employees WHERE EmployeeID = ? AND IsDeleted = 0""", id)
+        cursor.execute("""SELECT * FROM Employees WHERE EmployeeID = %s AND IsDeleted = 0""", (id,))
         employee = cursor.fetchone()
 
         if not employee:
@@ -291,13 +312,14 @@ def edit_employee(id):
             return redirect("/employees")
 
         if request.method == "POST":
+            # Hỗ trợ lấy theo index hoặc thuộc tính dict
+            photo_filename = employee[16] if isinstance(employee, tuple) else getattr(employee, 'Photo', None)
+            citizen_front_filename = employee[17] if isinstance(employee, tuple) else getattr(employee, 'CitizenFrontPhoto', None)
+            citizen_back_filename = employee[18] if isinstance(employee, tuple) else getattr(employee, 'CitizenBackPhoto', None)
+
             photo = request.files.get('photo')
-            photo_filename = employee.Photo
-            
             citizen_front = request.files.get('citizen_front')
             citizen_back = request.files.get('citizen_back')
-            citizen_front_filename = employee.CitizenFrontPhoto
-            citizen_back_filename = employee.CitizenBackPhoto
             
             fullname = normalize_name(request.form["fullname"])
             validate_name(fullname)
@@ -314,7 +336,7 @@ def edit_employee(id):
             citizenid = normalize_citizenid(request.form['citizenid'])
             validate_citizenid(citizenid)
                 
-            cursor.execute("SELECT COUNT(*) FROM Employees WHERE CitizenID = ? AND EmployeeID <> ? AND IsDeleted = 0", citizenid, id)
+            cursor.execute("SELECT COUNT(*) FROM Employees WHERE CitizenID = %s AND EmployeeID <> %s AND IsDeleted = 0", (citizenid, id))
             if cursor.fetchone()[0] > 0:
                 raise EmployeeValidationError('CCCD đã tồn tại!')
                 
@@ -331,14 +353,14 @@ def edit_employee(id):
             emergencyphone = normalize_phone(request.form['emergencyphone'])
             validate_emergency_phone(emergencyphone)
             
-            cursor.execute("SELECT COUNT(*) FROM Employees WHERE Email = ? AND EmployeeID <> ? AND IsDeleted = 0", email, id)
+            cursor.execute("SELECT COUNT(*) FROM Employees WHERE Email = %s AND EmployeeID <> %s AND IsDeleted = 0", (email, id))
             if cursor.fetchone()[0] > 0:
                 raise EmployeeValidationError('Email đã tồn tại!')
 
             phone = normalize_phone(request.form["phone"])
             validate_phone(phone)
                 
-            cursor.execute("SELECT COUNT(*) FROM Employees WHERE Phone = ? AND EmployeeID <> ? AND IsDeleted = 0", phone, id)
+            cursor.execute("SELECT COUNT(*) FROM Employees WHERE Phone = %s AND EmployeeID <> %s AND IsDeleted = 0", (phone, id))
             if cursor.fetchone()[0] > 0:
                 raise EmployeeValidationError('Số điện thoại đã tồn tại!')
 
@@ -354,34 +376,34 @@ def edit_employee(id):
             if photo and photo.filename != '':
                 if not allowed_file(photo.filename) or not allowed_mimetype(photo) or not verify_image(photo):
                     raise EmployeeValidationError('Ảnh đại diện không hợp lệ!')
-                if employee.Photo:
-                    delete_image(os.path.join(current_app.root_path, 'static', employee.Photo))
+                if photo_filename:
+                    delete_image(os.path.join(current_app.root_path, 'static', photo_filename))
                 photo_filename = save_avatar(photo)
                 
             if citizen_front and citizen_front.filename != '':
                 if not allowed_file(citizen_front.filename) or not allowed_mimetype(citizen_front) or not verify_image(citizen_front):
                     raise EmployeeValidationError('Ảnh CCCD mặt trước không hợp lệ!')
-                if employee.CitizenFrontPhoto:
-                    delete_image(os.path.join(current_app.root_path, 'static', employee.CitizenFrontPhoto))
+                if citizen_front_filename:
+                    delete_image(os.path.join(current_app.root_path, 'static', citizen_front_filename))
                 citizen_front_filename = save_citizen_front(citizen_front)
                 
             if citizen_back and citizen_back.filename != '':
                 if not allowed_file(citizen_back.filename) or not allowed_mimetype(citizen_back) or not verify_image(citizen_back):
                     raise EmployeeValidationError('Ảnh CCCD mặt sau không hợp lệ!')
-                if employee.CitizenBackPhoto:
-                    delete_image(os.path.join(current_app.root_path, 'static', employee.CitizenBackPhoto))
+                if citizen_back_filename:
+                    delete_image(os.path.join(current_app.root_path, 'static', citizen_back_filename))
                 citizen_back_filename = save_citizen_back(citizen_back)
 
             cursor.execute("""
                 UPDATE Employees
-                SET FullName = ?, Gender = ?, DOB = ?, HireDate = ?, Email = ?, Phone = ?, 
-                    DepartmentID = ?, PositionID = ?, ManagerID = ?, Status = ?, CitizenID = ?, 
-                    Address = ?, Nationality = ?, MaritalStatus = ?, EmergencyContact = ?, 
-                    EmergencyPhone = ?, Photo = ?, CitizenFrontPhoto = ?, CitizenBackPhoto = ?
-                WHERE EmployeeID = ? 
-            """, fullname, gender, dob, hiredate, email, phone, department_id, position_id, 
+                SET FullName = %s, Gender = %s, DOB = %s, HireDate = %s, Email = %s, Phone = %s, 
+                    DepartmentID = %s, PositionID = %s, ManagerID = %s, Status = %s, CitizenID = %s, 
+                    Address = %s, Nationality = %s, MaritalStatus = %s, EmergencyContact = %s, 
+                    EmergencyPhone = %s, Photo = %s, CitizenFrontPhoto = %s, CitizenBackPhoto = %s
+                WHERE EmployeeID = %s 
+            """, (fullname, gender, dob, hiredate, email, phone, department_id, position_id, 
                  manager_id, status, citizenid, address, nationality, maritalstatus, 
-                 emergencycontact, emergencyphone, photo_filename, citizen_front_filename, citizen_back_filename, id)
+                 emergencycontact, emergencyphone, photo_filename, citizen_front_filename, citizen_back_filename, id))
 
             conn.commit()
             create_notification(title='Cập nhật nhân viên',
@@ -433,22 +455,24 @@ def delete_employee(id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute('SELECT FullName FROM Employees WHERE EmployeeID = ? AND IsDeleted = 0', (id,))
+        cursor.execute('SELECT FullName FROM Employees WHERE EmployeeID = %s AND IsDeleted = 0', (id,))
         employee = cursor.fetchone()
         
         if not employee:
             flash('Nhân viên không tồn tại hoặc đã bị xóa trước đó!', 'danger')
             return redirect("/employees")
 
-        cursor.execute("UPDATE Employees SET IsDeleted = 1 WHERE EmployeeID = ?", (id,))
+        employee_name = employee[0] if isinstance(employee, tuple) else employee.FullName
+
+        cursor.execute("UPDATE Employees SET IsDeleted = 1 WHERE EmployeeID = %s", (id,))
         conn.commit()
         
         create_notification(title='Xóa nhân viên',
-                            message=f'{employee.FullName} đã bị xóa khỏi hệ thống.',
+                            message=f'{employee_name} đã bị xóa khỏi hệ thống.',
                             type='Warning',
                             receiver_role='Admin',
                             url='/employees')
-        log_activity(module='Employee', action='Delete', record_id=id, description=f'Soft deleted employee {employee.FullName}. ')
+        log_activity(module='Employee', action='Delete', record_id=id, description=f'Soft deleted employee {employee_name}. ')
             
         flash('Xóa nhân viên thành công (Xóa mềm)!', "success")
         return redirect("/employees")
@@ -474,8 +498,8 @@ def export_employees_csv():
         cursor.execute(""" 
             SELECT E.EmployeeID, E.FullName, E.Gender, E.Phone, E.Email, D.DepartmentName, P.PositionName, E.Status 
             FROM Employees E 
-            INNER JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
-            INNER JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
+            LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
+            LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
             WHERE E.IsDeleted = 0
             ORDER BY E.EmployeeID 
         """)
@@ -488,7 +512,10 @@ def export_employees_csv():
         writer.writerow(["EmployeeID", "FullName", "Gender", "Phone", "Email", "Department", "Position", "Status"])
         
         for row in rows:
-            writer.writerow([row.EmployeeID, row.FullName, row.Gender, row.Phone, row.Email, row.DepartmentName, row.PositionName, row.Status])
+            if isinstance(row, tuple):
+                writer.writerow([row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]])
+            else:
+                writer.writerow([row.EmployeeID, row.FullName, row.Gender, row.Phone, row.Email, row.DepartmentName, row.PositionName, row.Status])
         
         log_activity(module='Employee', action='Export', description='Exported employee list to CSV. ')
             
@@ -516,83 +543,87 @@ def employee_detail(id):
     cursor = conn.cursor()
     try:
         cursor.execute(""" 
-            SELECT E.EmployeeID, E.EmployeeCode, E.FullName, E.Gender, E.DOB, E.Phone, E.Email, E.CitizenID, E.Address, 
+            SELECT E.EmployeeID, COALESCE(E.CitizenID, 'NV' || LPAD(E.EmployeeID::text, 4, '0')) AS EmployeeCode, 
+                   E.FullName, E.Gender, E.DOB, E.Phone, E.Email, E.CitizenID, E.Address, 
                    E.Nationality, E.MaritalStatus, E.EmergencyContact, E.EmergencyPhone, E.HireDate, E.Status, 
                    D.DepartmentName, P.PositionName 
             FROM Employees E 
-            INNER JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
-            INNER JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
-            WHERE E.EmployeeID = ? AND E.IsDeleted = 0
-        """, id)
+            LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
+            LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
+            WHERE E.EmployeeID = %s AND E.IsDeleted = 0
+        """, (id,))
         employee = cursor.fetchone()
 
         if not employee:
             flash('Nhân viên không tồn tại hoặc đã bị xóa!', 'danger')
             return redirect("/employees")
 
+        # Cú pháp TOP 1 -> LIMIT 1
         cursor.execute("""
-            SELECT TOP 1 BaseSalary, Bonus, Allowance, 
+            SELECT BaseSalary, Bonus, Allowance, 
                    (BaseSalary + Bonus + Allowance) AS TotalSalary,
-                   Month, Year 
+                   month, year 
             FROM Salaries
-            WHERE EmployeeID = ? AND IsDeleted = 0
+            WHERE EmployeeID = %s AND IsDeleted = 0
             ORDER BY SalaryID DESC
-        """, id)
+            LIMIT 1
+        """, (id,))
         salary = cursor.fetchone()
 
         cursor.execute("""
-            SELECT Year, Month, BaseSalary, Bonus, Allowance, (BaseSalary + Bonus + Allowance) AS TotalSalary
+            SELECT year, month, BaseSalary, Bonus, Allowance, (BaseSalary + Bonus + Allowance) AS TotalSalary
             FROM Salaries  
-            WHERE EmployeeID = ? AND IsDeleted = 0
-            ORDER BY Year DESC, Month DESC
-        """, id)
+            WHERE EmployeeID = %s AND IsDeleted = 0
+            ORDER BY year DESC, month DESC
+        """, (id,))
         salary_history = cursor.fetchall()
 
         cursor.execute("""
             SELECT Date, CheckInTime, CheckOutTime, Status 
             FROM Attendance 
-            WHERE EmployeeID = ? AND IsDeleted = 0
+            WHERE EmployeeID = %s AND IsDeleted = 0
             ORDER BY Date DESC
-        """, id)
+        """, (id,))
         attendance_history = cursor.fetchall()
 
         cursor.execute("""
             SELECT FromDate, ToDate, Reason, Status 
             FROM LeaveRequests
-            WHERE EmployeeID = ? AND IsDeleted = 0
+            WHERE EmployeeID = %s AND IsDeleted = 0
             ORDER BY FromDate DESC
-        """, id)
+        """, (id,))
         leave_history = cursor.fetchall()
 
+        # Cú pháp ngày tháng chuẩn PostgreSQL (EXTRACT)
         cursor.execute("""
             SELECT COUNT(*) FROM Attendance 
-            WHERE EmployeeID = ? AND IsDeleted = 0
-              AND Status = N'Có mặt'
-              AND MONTH(Date) = MONTH(GETDATE())
-              AND YEAR(Date) = YEAR(GETDATE())
-        """, id)
+            WHERE EmployeeID = %s AND IsDeleted = 0
+              AND Status = 'Có mặt'
+              AND EXTRACT(MONTH FROM Date) = EXTRACT(MONTH FROM CURRENT_DATE)
+              AND EXTRACT(YEAR FROM Date) = EXTRACT(YEAR FROM CURRENT_DATE)
+        """, (id,))
         present_days = cursor.fetchone()[0]
 
         cursor.execute("""
             SELECT COUNT(*) FROM Attendance 
-            WHERE EmployeeID = ? AND IsDeleted = 0
-              AND Status = N'Đi trễ'
-              AND MONTH(Date) = MONTH(GETDATE())
-              AND YEAR(Date) = YEAR(GETDATE())
-        """, id)
+            WHERE EmployeeID = %s AND IsDeleted = 0
+              AND Status = 'Đi trễ'
+              AND EXTRACT(MONTH FROM Date) = EXTRACT(MONTH FROM CURRENT_DATE)
+              AND EXTRACT(YEAR FROM Date) = EXTRACT(YEAR FROM CURRENT_DATE)
+        """, (id,))
         late_count_in_month = cursor.fetchone()[0]
 
         cursor.execute("""
             SELECT COUNT(*) FROM LeaveRequests 
-            WHERE EmployeeID = ? AND IsDeleted = 0
-              AND Status = N'Đã duyệt'
-              AND MONTH(Fromdate) = MONTH(GETDATE())
-              AND YEAR(Fromdate) = YEAR(GETDATE())
-        """, id)
+            WHERE EmployeeID = %s AND IsDeleted = 0
+              AND Status = 'Đã duyệt'
+              AND EXTRACT(MONTH FROM FromDate) = EXTRACT(MONTH FROM CURRENT_DATE)
+              AND EXTRACT(YEAR FROM FromDate) = EXTRACT(YEAR FROM CURRENT_DATE)
+        """, (id,))
         leave_count_in_month = cursor.fetchone()[0]
 
         return render_template(
-            "/employee/employee_detail.html", 
+            "employee/employee_detail.html", 
             employee=employee, 
             salary=salary, 
             salary_history=salary_history, 
@@ -626,7 +657,7 @@ def delete_selected_employees():
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        placeholders = ', '.join(['?'] * len(employee_ids))
+        placeholders = ', '.join(['%s'] * len(employee_ids))
         
         query_info = f"SELECT EmployeeID, FullName FROM Employees WHERE EmployeeID IN ({placeholders}) AND IsDeleted = 0"
         cursor.execute(query_info, tuple(employee_ids))
@@ -638,11 +669,13 @@ def delete_selected_employees():
             cursor.execute(query_delete, tuple(employee_ids))
             
             for row in records:
+                emp_id = row[0] if isinstance(row, tuple) else row.EmployeeID
+                emp_name = row[1] if isinstance(row, tuple) else row.FullName
                 log_activity(
                     module='Employee', 
                     action='Delete', 
-                    record_id=int(row[0]), 
-                    description=f'Soft deleted employee {row[1]}. '
+                    record_id=int(emp_id), 
+                    description=f'Soft deleted employee {emp_name}. '
                 )
 
             conn.commit()

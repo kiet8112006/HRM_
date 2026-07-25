@@ -13,9 +13,19 @@ report_bp = Blueprint("report", __name__)
 
 # --- CÁC HÀM HỖ TRỢ LẤY DANH MỤC CÓ CACHE ---
 def get_cached_departments():
-    from app import cache
-    @cache.cached(timeout=60, key_prefix='report_departments_cache')
-    def query_db():
+    try:
+        from app import cache
+        @cache.cached(timeout=60, key_prefix='report_departments_cache')
+        def query_db():
+            conn = get_connection()
+            cursor = conn.cursor()
+            try:
+                cursor.execute("SELECT DepartmentName FROM Departments WHERE IsDeleted = 0 ORDER BY DepartmentName")
+                return cursor.fetchall()
+            finally:
+                conn.close()
+        return query_db()
+    except Exception:
         conn = get_connection()
         cursor = conn.cursor()
         try:
@@ -23,12 +33,21 @@ def get_cached_departments():
             return cursor.fetchall()
         finally:
             conn.close()
-    return query_db()
 
 def get_cached_positions():
-    from app import cache
-    @cache.cached(timeout=60, key_prefix='report_positions_cache')
-    def query_db():
+    try:
+        from app import cache
+        @cache.cached(timeout=60, key_prefix='report_positions_cache')
+        def query_db():
+            conn = get_connection()
+            cursor = conn.cursor()
+            try:
+                cursor.execute("SELECT PositionName FROM Positions WHERE IsDeleted = 0 ORDER BY PositionName")
+                return cursor.fetchall()
+            finally:
+                conn.close()
+        return query_db()
+    except Exception:
         conn = get_connection()
         cursor = conn.cursor()
         try:
@@ -36,7 +55,6 @@ def get_cached_positions():
             return cursor.fetchall()
         finally:
             conn.close()
-    return query_db()
 
 
 @report_bp.route("/reports")
@@ -62,23 +80,23 @@ def reports():
         params = []
 
         if department:
-            where.append("D.DepartmentName = ?")
+            where.append("D.DepartmentName = %s")
             params.append(department)
 
         if position:
-            where.append("P.PositionName = ?")
+            where.append("P.PositionName = %s")
             params.append(position)
 
         if status:
-            where.append("E.Status = ?")
+            where.append("E.Status = %s")
             params.append(status)
 
         if from_date:
-            where.append("E.HireDate >= ?")
+            where.append("E.HireDate >= %s")
             params.append(from_date)
 
         if to_date:
-            where.append("E.HireDate <= ?")
+            where.append("E.HireDate <= %s")
             params.append(to_date)
 
         condition = " WHERE " + " AND ".join(where)
@@ -92,7 +110,7 @@ def reports():
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
             {condition}
-        """, params)
+        """, tuple(params))
         total_employees = cursor.fetchone()[0]
 
         cursor.execute("SELECT COUNT(*) FROM Departments WHERE IsDeleted = 0")
@@ -101,28 +119,29 @@ def reports():
         cursor.execute("SELECT COUNT(*) FROM Positions WHERE IsDeleted = 0")
         total_positions = cursor.fetchone()[0]
 
+        # Đã bỏ N'...' ở các chuỗi tiếng Việt
         cursor.execute(f"""
             SELECT COUNT(*) FROM Employees E 
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0 
-            {condition} AND E.Status = N'Đang làm'
-        """, params)
+            {condition} AND E.Status = 'Đang làm'
+        """, tuple(params))
         working_employees = cursor.fetchone()[0]
 
         cursor.execute(f"""
             SELECT COUNT(*) FROM Employees E 
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0 
-            {condition} AND E.Status = N'Nghỉ việc'
-        """, params)
+            {condition} AND E.Status = 'Nghỉ việc'
+        """, tuple(params))
         quit_employees = cursor.fetchone()[0]
 
         cursor.execute(f"""
             SELECT COUNT(*) FROM Employees E 
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0 
-            {condition} AND E.Status = N'Thử việc'
-        """, params)
+            {condition} AND E.Status = 'Thử việc'
+        """, tuple(params))
         probation_employees = cursor.fetchone()[0]
 
         cursor.execute(f"""
@@ -131,49 +150,55 @@ def reports():
             INNER JOIN Employees E ON L.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0 
-            {condition} AND L.IsDeleted = 0 AND L.Status = N'Chờ duyệt'
-        """, params)
+            {condition} AND L.IsDeleted = 0 AND L.Status = 'Chờ duyệt'
+        """, tuple(params))
         pending_leave = cursor.fetchone()[0]
 
+        # Đổi ISNULL -> COALESCE
         cursor.execute(f"""
-            SELECT ISNULL(SUM(S.BaseSalary + S.Bonus + S.Allowance), 0) 
+            SELECT COALESCE(SUM(S.BaseSalary + S.Bonus + S.Allowance), 0) 
             FROM Salaries S 
             INNER JOIN Employees E ON S.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0 
             {condition} AND S.IsDeleted = 0
-        """, params)
+        """, tuple(params))
         total_salary = cursor.fetchone()[0]
 
+        # Đổi GETDATE() + DATEADD -> CURRENT_DATE + INTERVAL '30 days'
         cursor.execute(f"""
             SELECT COUNT(*) 
             FROM Contracts C 
             INNER JOIN Employees E ON C.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0 
-            {condition} AND C.IsDeleted = 0 AND C.EndDate BETWEEN GETDATE() AND DATEADD(day, 30, GETDATE())
-        """, params)
+            {condition} AND C.IsDeleted = 0 AND C.EndDate BETWEEN CURRENT_DATE AND (CURRENT_DATE + INTERVAL '30 days')
+        """, tuple(params))
         expiring_contract = cursor.fetchone()[0]
 
+        # Đổi MONTH()/YEAR() -> EXTRACT()
         cursor.execute(f"""
             SELECT COUNT(*)
             FROM Employees E
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
-            {condition} AND MONTH(E.HireDate) = MONTH(GETDATE()) AND YEAR(E.HireDate) = YEAR(GETDATE())
-        """, params)
+            {condition} AND EXTRACT(MONTH FROM E.HireDate) = EXTRACT(MONTH FROM CURRENT_DATE) 
+                        AND EXTRACT(YEAR FROM E.HireDate) = EXTRACT(YEAR FROM CURRENT_DATE)
+        """, tuple(params))
         new_employee = cursor.fetchone()[0]
 
         # ==========================================================
         # Chart Data Processing
         # ==========================================================
+        # Đổi SELECT TOP 5 -> LIMIT 5
         cursor.execute("""
-            SELECT TOP 5 E.FullName, MAX(S.BaseSalary + S.Bonus + S.Allowance) AS TotalSalary
+            SELECT E.FullName, MAX(S.BaseSalary + S.Bonus + S.Allowance) AS TotalSalary
             FROM Employees E
             INNER JOIN Salaries S ON E.EmployeeID = S.EmployeeID AND S.IsDeleted = 0
             WHERE E.IsDeleted = 0
             GROUP BY E.FullName
             ORDER BY TotalSalary DESC
+            LIMIT 5
         """)
         top_salaries_raw = cursor.fetchall()
         top_salaries = [{"FullName": row[0], "TotalSalary": float(row[1])} for row in top_salaries_raw]

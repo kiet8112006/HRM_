@@ -42,16 +42,17 @@ def positions():
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Base query
+    # Base query (Thêm lọc IsDeleted nếu có hoặc giữ nguyên WHERE 1=1)
     sql_base = "FROM Positions WHERE 1=1"
     params = []
 
     if keyword:
-        sql_base += " AND (PositionCode LIKE ? OR PositionName LIKE ?)"
+        # PostgreSQL dùng ILIKE để tìm kiếm không phân biệt hoa thường
+        sql_base += " AND (PositionCode ILIKE %s OR PositionName ILIKE %s)"
         params.extend([f"%{keyword}%", f"%{keyword}%"])
 
     if status:
-        sql_base += " AND Status = ?"
+        sql_base += " AND Status = %s"
         params.append(status)
 
     # Đếm tổng số bản ghi
@@ -63,21 +64,21 @@ def positions():
     if page > total_pages:
         page = total_pages
 
-    # Lấy dữ liệu theo trang
+    # Lấy dữ liệu theo trang chuẩn PostgreSQL (LIMIT %s OFFSET %s)
     offset = (page - 1) * per_page
     data_sql = f"""
         SELECT PositionID, PositionCode, PositionName, PositionLevel, MinSalary, MaxSalary, Status, Description 
         {sql_base} 
         ORDER BY PositionLevel ASC, PositionID DESC 
-        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+        LIMIT %s OFFSET %s
     """
-    params_data = params + [offset, per_page]
+    params_data = params + [per_page, offset]
 
     try:
         cursor.execute(data_sql, tuple(params_data))
         position_list = cursor.fetchall()
     except Exception:
-        # Fallback nếu DB không hỗ trợ OFFSET/FETCH (trả về toàn bộ danh sách)
+        # Fallback nếu câu truy vấn gặp sự cố
         fallback_sql = f"SELECT PositionID, PositionCode, PositionName, PositionLevel, MinSalary, MaxSalary, Status, Description {sql_base} ORDER BY PositionLevel ASC, PositionID DESC"
         cursor.execute(fallback_sql, tuple(params))
         position_list = cursor.fetchall()
@@ -128,16 +129,16 @@ def add_position():
             conn = get_connection()
             cursor = conn.cursor()
 
-            # Kiểm tra trùng mã chức vụ
-            cursor.execute("SELECT PositionID FROM Positions WHERE PositionCode = ?", (code,))
+            # Kiểm tra trùng mã chức vụ (đổi ? thành %s)
+            cursor.execute("SELECT PositionID FROM Positions WHERE PositionCode = %s", (code,))
             if cursor.fetchone():
                 conn.close()
                 raise PositionValidationError('Mã chức vụ này đã tồn tại trong hệ thống!')
 
-            # Insert DB
+            # Insert DB (đổi ? thành %s)
             insert_sql = """
                 INSERT INTO Positions (PositionCode, PositionName, PositionLevel, MinSalary, MaxSalary, Status, Description)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
             cursor.execute(insert_sql, (code, name, level, min_salary, max_salary, status, description))
             conn.commit()
@@ -185,16 +186,16 @@ def edit_position(id):
             validate_position_status(status)
             validate_position_description(description)
 
-            # Kiểm tra trùng mã
-            cursor.execute("SELECT PositionID FROM Positions WHERE PositionCode = ? AND PositionID != ?", (code, id))
+            # Kiểm tra trùng mã (đổi ? thành %s)
+            cursor.execute("SELECT PositionID FROM Positions WHERE PositionCode = %s AND PositionID != %s", (code, id))
             if cursor.fetchone():
                 conn.close()
                 raise PositionValidationError('Mã chức vụ này đã bị trùng với chức vụ khác!')
 
             update_sql = """
                 UPDATE Positions
-                SET PositionCode = ?, PositionName = ?, PositionLevel = ?, MinSalary = ?, MaxSalary = ?, Status = ?, Description = ?
-                WHERE PositionID = ?
+                SET PositionCode = %s, PositionName = %s, PositionLevel = %s, MinSalary = %s, MaxSalary = %s, Status = %s, Description = %s
+                WHERE PositionID = %s
             """
             cursor.execute(update_sql, (code, name, level, min_salary, max_salary, status, description, id))
             conn.commit()
@@ -208,7 +209,7 @@ def edit_position(id):
         except Exception as e:
             flash(f'Lỗi hệ thống: {str(e)}', 'danger')
 
-    cursor.execute("SELECT PositionID, PositionCode, PositionName, PositionLevel, MinSalary, MaxSalary, Status, Description FROM Positions WHERE PositionID = ?", (id,))
+    cursor.execute("SELECT PositionID, PositionCode, PositionName, PositionLevel, MinSalary, MaxSalary, Status, Description FROM Positions WHERE PositionID = %s", (id,))
     position_data = cursor.fetchone()
     conn.close()
 
@@ -231,14 +232,16 @@ def delete_position(id):
     cursor = conn.cursor()
 
     try:
-        cursor.execute("SELECT COUNT(*) FROM Employees WHERE PositionID = ?", (id,))
+        # Kiểm tra xem có nhân viên nào đang giữ chức vụ này không (đổi ? thành %s)
+        cursor.execute("SELECT COUNT(*) FROM Employees WHERE PositionID = %s AND COALESCE(IsDeleted, 0) = 0", (id,))
         if cursor.fetchone()[0] > 0:
             flash('Không thể xóa chức vụ này vì đang có nhân viên giữ chức vụ!', 'danger')
         else:
-            cursor.execute("DELETE FROM Positions WHERE PositionID = ?", (id,))
+            cursor.execute("DELETE FROM Positions WHERE PositionID = %s", (id,))
             conn.commit()
             flash('Xóa chức vụ thành công!', 'success')
     except Exception as e:
+        conn.rollback()
         flash(f'Lỗi khi xóa: {str(e)}', 'danger')
     finally:
         conn.close()
@@ -263,11 +266,12 @@ def delete_selected_positions():
     cursor = conn.cursor()
 
     try:
-        format_strings = ','.join(['?'] * len(position_ids))
+        format_strings = ','.join(['%s'] * len(position_ids))
         cursor.execute(f"DELETE FROM Positions WHERE PositionID IN ({format_strings})", tuple(position_ids))
         conn.commit()
         flash(f'Đã xóa thành công {len(position_ids)} chức vụ!', 'success')
     except Exception as e:
+        conn.rollback()
         flash(f'Không thể xóa các chức vụ đã chọn do ràng buộc dữ liệu!', 'danger')
     finally:
         conn.close()
@@ -296,11 +300,14 @@ def export_positions_csv():
     writer.writerow(['ID', 'Mã Chức Vụ', 'Tên Chức Vụ', 'Cấp Độ', 'Lương Tối Thiểu', 'Lương Tối Đa', 'Trạng Thái', 'Mô Tả'])
 
     for r in rows:
-        writer.writerow(list(r))
+        if isinstance(r, tuple):
+            writer.writerow(list(r))
+        else:
+            writer.writerow([r.PositionID, r.PositionCode, r.PositionName, r.PositionLevel, r.MinSalary, r.MaxSalary, r.Status, r.Description])
 
     output.seek(0)
     return Response(
-        output.getvalue(),
+        output.getvalue().encode('utf-8-sig'),
         mimetype='text/csv',
         headers={'Content-Disposition': 'attachment; filename=positions.csv'}
     )

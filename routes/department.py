@@ -21,18 +21,27 @@ department_bp = Blueprint("department", __name__)
 
 # --- HÀM HỖ TRỢ LẤY DANH SÁCH NHÂN VIÊN CÓ CACHE ---
 def get_cached_active_employees():
-    from app import cache
-    @cache.cached(timeout=60, key_prefix='department_employees_list')
-    def query_db():
+    try:
+        from app import cache
+        @cache.cached(timeout=60, key_prefix='department_employees_list')
+        def query_db():
+            conn = get_connection()
+            cursor = conn.cursor()
+            try:
+                cursor.execute("SELECT EmployeeID, FullName FROM Employees WHERE IsDeleted = 0 ORDER BY FullName")
+                data = cursor.fetchall()
+                return data
+            finally:
+                conn.close()
+        return query_db()
+    except Exception:
         conn = get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute("SELECT EmployeeID, FullName FROM Employees WHERE IsDeleted = 0 ORDER BY FullName")
-            data = cursor.fetchall()
-            return data
+            return cursor.fetchall()
         finally:
             conn.close()
-    return query_db()
 
 
 # =====================================================================
@@ -50,23 +59,24 @@ def departments():
     conn = get_connection() 
     cursor = conn.cursor()   
     try:
-        cursor.execute(""" SELECT COUNT(*) FROM Departments WHERE IsDeleted = 0 AND DepartmentName LIKE ? """, f"%{keyword}%")
+        # Cú pháp tìm kiếm không phân biệt hoa thường (ILIKE) & Placeholder %s
+        cursor.execute(""" SELECT COUNT(*) FROM Departments WHERE IsDeleted = 0 AND DepartmentName ILIKE %s """, (f"%{keyword}%",))
         total_records = cursor.fetchone()[0]
 
+        # Cú pháp phân trang PostgreSQL: LIMIT %s OFFSET %s
         cursor.execute("""
             SELECT D.DepartmentID,
                    D.DepartmentCode, 
                    D.DepartmentName,
                    D.Description, 
                    D.Location, 
-                   E.Fullname as Managername 
+                   E.FullName as Managername 
             FROM Departments D 
             LEFT JOIN Employees E ON D.ManagerID = E.EmployeeID AND E.IsDeleted = 0
-            WHERE D.IsDeleted = 0 AND D.DepartmentName LIKE ? 
+            WHERE D.IsDeleted = 0 AND D.DepartmentName ILIKE %s 
             ORDER BY D.DepartmentID 
-            OFFSET ? ROWS 
-            FETCH NEXT ? ROWS ONLY 
-        """, (f"%{keyword}%", offset, per_page))
+            LIMIT %s OFFSET %s
+        """, (f"%{keyword}%", per_page, offset))
         departments_list = cursor.fetchall()
 
         total_pages = (total_records + per_page - 1) // per_page
@@ -87,7 +97,7 @@ def departments():
 
 
 # =====================================================================
-# 2. ROUTE: THÊM MỚI PHÒNG BAN (ÁP DỤNG EXCEPTION HANDLING)
+# 2. ROUTE: THÊM MỚI PHÒNG BAN
 # =====================================================================
 @department_bp.route("/add_department", methods=["GET", "POST"])
 @login_required
@@ -101,14 +111,14 @@ def add_department():
             department_code = normalize_department_code(request.form.get('department_code'))
             validate_department_code(department_code)
 
-            cursor.execute("SELECT COUNT(*) FROM Departments WHERE DepartmentCode=? AND IsDeleted = 0", department_code)
+            cursor.execute("SELECT COUNT(*) FROM Departments WHERE DepartmentCode = %s AND IsDeleted = 0", (department_code,))
             if cursor.fetchone()[0] > 0:
                 raise DepartmentValidationError('Mã phòng ban đã tồn tại!')
                 
             department_name = normalize_department_name(request.form.get("department_name"))
             validate_department_name(department_name)
                 
-            cursor.execute("SELECT COUNT(*) FROM Departments WHERE DepartmentName = ? AND IsDeleted = 0", department_name)
+            cursor.execute("SELECT COUNT(*) FROM Departments WHERE DepartmentName = %s AND IsDeleted = 0", (department_name,))
             if cursor.fetchone()[0] > 0:
                 raise DepartmentValidationError('Tên phòng ban đã tồn tại!')
 
@@ -124,15 +134,15 @@ def add_department():
             manager_id = request.form.get("manager_id") or None
                 
             if manager_id is not None:
-                cursor.execute('SELECT COUNT(*) FROM Employees WHERE EmployeeID =? AND IsDeleted = 0', manager_id)
+                cursor.execute('SELECT COUNT(*) FROM Employees WHERE EmployeeID = %s AND IsDeleted = 0', (manager_id,))
                 if cursor.fetchone()[0] == 0:
                     raise DepartmentValidationError('Trưởng phòng không tồn tại hoặc đã bị xóa!')
                     
-            # 2. Chèn vào Database
+            # 2. Chèn vào Database (Sửa ? thành %s)
             cursor.execute("""
                 INSERT INTO Departments (DepartmentCode, DepartmentName, Description, Location, ManagerID, Status, IsDeleted)
-                VALUES (?, ?, ?, ?, ?, ?, 0)
-            """, department_code, department_name, description, location, manager_id, status)
+                VALUES (%s, %s, %s, %s, %s, %s, 0)
+            """, (department_code, department_name, description, location, manager_id, status))
             
             conn.commit() 
 
@@ -169,7 +179,7 @@ def add_department():
 
 
 # =====================================================================
-# 3. ROUTE: CHỈNH SỬA THÔNG TIN PHÒNG BAN (ÁP DỤNG EXCEPTION HANDLING)
+# 3. ROUTE: CHỈNH SỬA THÔNG TIN PHÒNG BAN
 # =====================================================================
 @department_bp.route("/edit_department/<int:id>", methods=["GET", "POST"])
 @login_required
@@ -179,7 +189,7 @@ def edit_department(id):
     cursor = conn.cursor() 
 
     try:
-        cursor.execute("SELECT COUNT(*) FROM Departments WHERE DepartmentID = ? AND IsDeleted = 0", id)
+        cursor.execute("SELECT COUNT(*) FROM Departments WHERE DepartmentID = %s AND IsDeleted = 0", (id,))
         if cursor.fetchone()[0] == 0:
             flash('Phòng ban không tồn tại hoặc đã bị xóa!', 'danger')
             return redirect("/departments")
@@ -189,15 +199,15 @@ def edit_department(id):
             validate_department_code(department_code)
                 
             cursor.execute("""
-                SELECT COUNT(*) FROM Departments WHERE DepartmentCode = ? AND DepartmentID <> ? AND IsDeleted = 0
-            """, department_code, id)
+                SELECT COUNT(*) FROM Departments WHERE DepartmentCode = %s AND DepartmentID <> %s AND IsDeleted = 0
+            """, (department_code, id))
             if cursor.fetchone()[0] > 0:
                 raise DepartmentValidationError('Mã phòng ban đã tồn tại!')
                 
             department_name = normalize_department_name(request.form.get("department_name"))
             validate_department_name(department_name)
                 
-            cursor.execute(""" SELECT COUNT(*) FROM Departments WHERE DepartmentName = ? AND DepartmentID <> ? AND IsDeleted = 0 """, department_name, id)
+            cursor.execute(""" SELECT COUNT(*) FROM Departments WHERE DepartmentName = %s AND DepartmentID <> %s AND IsDeleted = 0 """, (department_name, id))
             if cursor.fetchone()[0] > 0:
                 raise DepartmentValidationError('Tên phòng ban đã tồn tại!')
 
@@ -213,15 +223,15 @@ def edit_department(id):
             manager_id = request.form.get("manager_id") or None
                 
             if manager_id is not None:
-                cursor.execute('SELECT COUNT(*) FROM Employees WHERE EmployeeID = ? AND IsDeleted = 0', manager_id)
+                cursor.execute('SELECT COUNT(*) FROM Employees WHERE EmployeeID = %s AND IsDeleted = 0', (manager_id,))
                 if cursor.fetchone()[0] == 0:
                     raise DepartmentValidationError('Trưởng phòng không tồn tại hoặc đã bị xóa!')
 
             cursor.execute("""
                 UPDATE Departments
-                SET DepartmentCode = ?, DepartmentName = ?, Description = ?, Location = ?, ManagerID = ?, Status = ?
-                WHERE DepartmentID = ? 
-            """, department_code, department_name, description, location, manager_id, status, id)
+                SET DepartmentCode = %s, DepartmentName = %s, Description = %s, Location = %s, ManagerID = %s, Status = %s
+                WHERE DepartmentID = %s 
+            """, (department_code, department_name, description, location, manager_id, status, id))
             
             conn.commit()
 
@@ -258,7 +268,7 @@ def edit_department(id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute(""" SELECT * FROM Departments WHERE DepartmentID=? AND IsDeleted = 0 """, id)
+        cursor.execute(""" SELECT * FROM Departments WHERE DepartmentID = %s AND IsDeleted = 0 """, (id,))
         department = cursor.fetchone()
         employees = get_cached_active_employees()
         return render_template("department/edit_department.html", department=department, employees=employees)
@@ -276,7 +286,7 @@ def delete_department(id):
     conn = get_connection() 
     cursor = conn.cursor() 
     try:
-        cursor.execute(""" SELECT DepartmentName FROM Departments WHERE DepartmentID = ? AND IsDeleted = 0 """, id)
+        cursor.execute(""" SELECT DepartmentName FROM Departments WHERE DepartmentID = %s AND IsDeleted = 0 """, (id,))
         department_row = cursor.fetchone()
         if not department_row:
             flash("Phòng ban không tồn tại hoặc đã bị xóa trước đó!", "danger")
@@ -284,12 +294,12 @@ def delete_department(id):
             
         department_name = department_row[0]
 
-        cursor.execute(""" SELECT COUNT(*) FROM Employees WHERE DepartmentID = ? AND IsDeleted = 0 """, id)
+        cursor.execute(""" SELECT COUNT(*) FROM Employees WHERE DepartmentID = %s AND IsDeleted = 0 """, (id,))
         if cursor.fetchone()[0] > 0:
             flash("Không thể xóa phòng ban vì vẫn còn nhân viên đang làm việc thuộc phòng ban này!", "danger")
             return redirect("/departments")
             
-        cursor.execute(""" UPDATE Departments SET IsDeleted = 1 WHERE DepartmentID = ? """, id)
+        cursor.execute(""" UPDATE Departments SET IsDeleted = 1 WHERE DepartmentID = %s """, (id,))
         conn.commit()
 
         create_notification(
@@ -338,14 +348,14 @@ def delete_selected_departments():
         failed_count = 0
 
         for department_id in department_ids:
-            cursor.execute('SELECT COUNT(*) FROM Employees WHERE DepartmentID = ? AND IsDeleted = 0', department_id)
+            cursor.execute('SELECT COUNT(*) FROM Employees WHERE DepartmentID = %s AND IsDeleted = 0', (department_id,))
             if cursor.fetchone()[0] > 0:
                 failed_count += 1
             else:
                 valid_delete_ids.append(department_id)
 
         if len(valid_delete_ids) > 0:
-            placeholders = ', '.join(['?'] * len(valid_delete_ids))
+            placeholders = ', '.join(['%s'] * len(valid_delete_ids))
             
             query_info = f"SELECT DepartmentID, DepartmentName FROM Departments WHERE DepartmentID IN ({placeholders}) AND IsDeleted = 0"
             cursor.execute(query_info, tuple(valid_delete_ids))
@@ -357,11 +367,13 @@ def delete_selected_departments():
                 cursor.execute(query_delete, tuple(valid_delete_ids))
 
                 for row in records:
+                    dept_id = row[0] if isinstance(row, tuple) else row.DepartmentID
+                    dept_name = row[1] if isinstance(row, tuple) else row.DepartmentName
                     log_activity(
                         module="Department",
                         action="Delete",
-                        record_id=int(row[0]),
-                        description=f"Soft deleted department {row[1]}."
+                        record_id=int(dept_id),
+                        description=f"Soft deleted department {dept_name}."
                     )
 
                 conn.commit()
@@ -403,13 +415,14 @@ def export_departments_csv():
     conn = get_connection()
     cursor = conn.cursor()
     try:
+        # Thay ISNULL(...) bằng COALESCE(..., '') chuẩn PostgreSQL
         cursor.execute("""
             SELECT D.DepartmentID,
                    D.DepartmentCode,
                    D.DepartmentName,
                    D.Description,
                    D.Location,
-                   ISNULL(E.FullName, '') AS Manager,
+                   COALESCE(E.FullName, '') AS Manager,
                    D.Status
             FROM Departments D
             LEFT JOIN Employees E ON D.ManagerID = E.EmployeeID AND E.IsDeleted = 0
@@ -427,9 +440,12 @@ def export_departments_csv():
         ])
 
         for row in rows:
-            writer.writerow([
-                row.DepartmentID, row.DepartmentCode, row.DepartmentName, row.Description, row.Location, row.Manager, row.Status
-            ])
+            if isinstance(row, tuple):
+                writer.writerow([row[0], row[1], row[2], row[3], row[4], row[5], row[6]])
+            else:
+                writer.writerow([
+                    row.DepartmentID, row.DepartmentCode, row.DepartmentName, row.Description, row.Location, row.Manager, row.Status
+                ])
 
         log_activity(
             module="Department",

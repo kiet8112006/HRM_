@@ -34,14 +34,14 @@ def audit_logs():
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        # Sửa logic search: (Username LIKE OR Description LIKE) thay vì AND
+        # Thay ? bằng %s và LIKE bằng ILIKE
         cursor.execute(
             """
             SELECT COUNT(*)
             FROM AuditLogs
-            WHERE (Username LIKE ? OR Description LIKE ?)
-              AND Module LIKE ?
-              AND Action LIKE ?
+            WHERE (Username ILIKE %s OR Description ILIKE %s)
+              AND Module ILIKE %s
+              AND Action ILIKE %s
             """,
             (
                 f"%{keyword}%",
@@ -52,6 +52,7 @@ def audit_logs():
         )
         total_records = cursor.fetchone()[0]
 
+        # Thay cú pháp OFFSET ROWS FETCH NEXT bằng LIMIT OFFSET của PostgreSQL
         cursor.execute(
             """
             SELECT
@@ -67,20 +68,19 @@ def audit_logs():
                 UserAgent,
                 CreatedAt
             FROM AuditLogs
-            WHERE (Username LIKE ? OR Description LIKE ?)
-              AND Module LIKE ?
-              AND Action LIKE ?
+            WHERE (Username ILIKE %s OR Description ILIKE %s)
+              AND Module ILIKE %s
+              AND Action ILIKE %s
             ORDER BY CreatedAt DESC
-            OFFSET ? ROWS
-            FETCH NEXT ? ROWS ONLY
+            LIMIT %s OFFSET %s
             """,
             (
                 f"%{keyword}%",
                 f"%{keyword}%",
                 f"%{module}%",
                 f"%{action}%",
-                offset,
-                per_page
+                per_page,
+                offset
             )
         )
         logs = cursor.fetchall()
@@ -153,7 +153,10 @@ def export_audit_logs_csv():
         ])
 
         for row in rows:
-            writer.writerow(row)
+            if isinstance(row, tuple):
+                writer.writerow(list(row))
+            else:
+                writer.writerow(row)
         
         log_activity(
             module='Audit', 

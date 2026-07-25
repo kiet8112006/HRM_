@@ -21,18 +21,27 @@ salary_bp = Blueprint("salary", __name__)
 
 # --- HÀM HỖ TRỢ LẤY DANH SÁCH NHÂN VIÊN CÓ CACHE ---
 def get_cached_active_employees():
-    from app import cache
-    @cache.cached(timeout=60, key_prefix='salary_employees_list_cache')
-    def query_db():
+    try:
+        from app import cache
+        @cache.cached(timeout=60, key_prefix='salary_employees_list_cache')
+        def query_db():
+            conn = get_connection()
+            cursor = conn.cursor()
+            try:
+                cursor.execute("SELECT EmployeeID, FullName FROM Employees WHERE IsDeleted = 0 ORDER BY FullName")
+                data = cursor.fetchall()
+                return data
+            finally:
+                conn.close()
+        return query_db()
+    except Exception:
         conn = get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute("SELECT EmployeeID, FullName FROM Employees WHERE IsDeleted = 0 ORDER BY FullName")
-            data = cursor.fetchall()
-            return data
+            return cursor.fetchall()
         finally:
             conn.close()
-    return query_db()
 
 
 # =====================================================================
@@ -53,19 +62,21 @@ def salaries():
     conn = get_connection() 
     cursor = conn.cursor() 
     try:
+        # PostgreSQL dùng ILIKE và ép kiểu sang TEXT
         cursor.execute(""" 
             SELECT COUNT(*) 
             FROM Salaries S 
             INNER JOIN Employees E ON S.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
             WHERE S.IsDeleted = 0 
-              AND E.FullName LIKE ? 
-              AND CAST(S.Month AS VARCHAR) LIKE ? 
-              AND CAST(S.Year AS VARCHAR) LIKE ?
+              AND E.FullName ILIKE %s 
+              AND CAST(S.Month AS TEXT) ILIKE %s 
+              AND CAST(S.Year AS TEXT) ILIKE %s
         """, (f"%{keyword}%", f"%{month}%", f"%{year}%"))
         total_records = cursor.fetchone()[0]
 
         total_pages = max(1, (total_records + per_page - 1) // per_page)
 
+        # Cú pháp phân trang PostgreSQL: LIMIT %s OFFSET %s
         cursor.execute("""
             SELECT S.SalaryID, S.SalaryCode, E.FullName as Fullname, S.BaseSalary, S.Bonus, S.Allowance, 
                    S.OvertimePay, S.Deduction, S.Tax, S.Insurance, S.NetSalary,
@@ -73,13 +84,12 @@ def salaries():
             FROM Salaries S 
             INNER JOIN Employees E ON S.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
             WHERE S.IsDeleted = 0 
-              AND E.FullName LIKE ? 
-              AND CAST(S.Month AS VARCHAR) LIKE ? 
-              AND CAST(S.Year AS VARCHAR) LIKE ?
+              AND E.FullName ILIKE %s 
+              AND CAST(S.Month AS TEXT) ILIKE %s 
+              AND CAST(S.Year AS TEXT) ILIKE %s
             ORDER BY S.Year DESC, S.Month DESC, S.SalaryID DESC 
-            OFFSET ? ROWS 
-            FETCH NEXT ? ROWS ONLY 
-        """, (f"%{keyword}%", f"%{month}%", f"%{year}%", offset, per_page))
+            LIMIT %s OFFSET %s
+        """, (f"%{keyword}%", f"%{month}%", f"%{year}%", per_page, offset))
         salaries_list = cursor.fetchall() 
 
         return render_template(
@@ -112,7 +122,7 @@ def add_salary():
         try:
             employee_id = request.form.get("employee_id")
             
-            cursor.execute("SELECT FullName FROM Employees WHERE EmployeeID = ? AND IsDeleted = 0", employee_id)
+            cursor.execute("SELECT FullName FROM Employees WHERE EmployeeID = %s AND IsDeleted = 0", (employee_id,))
             emp_row = cursor.fetchone()
             if not emp_row:
                 raise SalaryValidationError('Nhân viên không tồn tại hoặc đã bị xóa!')
@@ -140,20 +150,21 @@ def add_salary():
 
             cursor.execute("""
                 SELECT COUNT(*) FROM Salaries 
-                WHERE EmployeeID = ? AND Month = ? AND Year = ? AND IsDeleted = 0
-            """, employee_id, month, year)
+                WHERE EmployeeID = %s AND Month = %s AND Year = %s AND IsDeleted = 0
+            """, (employee_id, month, year))
             if cursor.fetchone()[0] > 0:
                 raise SalaryValidationError('Nhân viên đã có bảng lương trong tháng này!')
 
-            cursor.execute("SELECT ISNULL(MAX(SalaryID), 0) + 1 FROM Salaries")
+            # Đổi ISNULL thành COALESCE
+            cursor.execute("SELECT COALESCE(MAX(SalaryID), 0) + 1 FROM Salaries")
             next_id = cursor.fetchone()[0]
             salary_code = f"SAL{next_id:04d}"
 
             cursor.execute("""
                 INSERT INTO Salaries
                 (SalaryCode, EmployeeID, BaseSalary, Bonus, Allowance, OvertimePay, Deduction, Tax, Insurance, NetSalary, Month, Year, PaymentDate, Status, IsDeleted)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
-            """, salary_code, employee_id, base_salary, bonus, allowance, overtime_pay, deduction, tax, insurance, net_salary, month, year, payment_date, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0)
+            """, (salary_code, employee_id, base_salary, bonus, allowance, overtime_pay, deduction, tax, insurance, net_salary, month, year, payment_date, status))
 
             conn.commit() 
 
@@ -200,7 +211,7 @@ def edit_salary(id):
     conn = get_connection() 
     cursor = conn.cursor() 
     try:
-        cursor.execute("SELECT * FROM Salaries WHERE SalaryID = ? AND IsDeleted = 0", id)
+        cursor.execute("SELECT * FROM Salaries WHERE SalaryID = %s AND IsDeleted = 0", (id,))
         salary = cursor.fetchone()
 
         if not salary:
@@ -209,7 +220,7 @@ def edit_salary(id):
 
         if request.method == "POST":
             employee_id = request.form.get("employee_id")
-            cursor.execute("SELECT FullName FROM Employees WHERE EmployeeID = ? AND IsDeleted = 0", employee_id)
+            cursor.execute("SELECT FullName FROM Employees WHERE EmployeeID = %s AND IsDeleted = 0", (employee_id,))
             emp_row = cursor.fetchone()
             if not emp_row:
                 raise SalaryValidationError('Nhân viên không tồn tại hoặc đã bị xóa!')
@@ -237,17 +248,17 @@ def edit_salary(id):
 
             cursor.execute("""
                 SELECT COUNT(*) FROM Salaries 
-                WHERE EmployeeID = ? AND Month = ? AND Year = ? AND SalaryID <> ? AND IsDeleted = 0
-            """, employee_id, month, year, id)
+                WHERE EmployeeID = %s AND Month = %s AND Year = %s AND SalaryID <> %s AND IsDeleted = 0
+            """, (employee_id, month, year, id))
             if cursor.fetchone()[0] > 0:
                 raise SalaryValidationError('Nhân viên đã có bảng lương trong tháng này!')
 
             cursor.execute("""
                 UPDATE Salaries
-                SET EmployeeID = ?, BaseSalary = ?, Bonus = ?, Allowance = ?, OvertimePay = ?, Deduction = ?, Tax = ?, Insurance = ?, NetSalary = ?, 
-                    Month = ?, Year = ?, PaymentDate = ?, Status = ?
-                WHERE SalaryID = ?
-            """, employee_id, base_salary, bonus, allowance, overtime_pay, deduction, tax, insurance, net_salary, month, year, payment_date, status, id)
+                SET EmployeeID = %s, BaseSalary = %s, Bonus = %s, Allowance = %s, OvertimePay = %s, Deduction = %s, Tax = %s, Insurance = %s, NetSalary = %s, 
+                    Month = %s, Year = %s, PaymentDate = %s, Status = %s
+                WHERE SalaryID = %s
+            """, (employee_id, base_salary, bonus, allowance, overtime_pay, deduction, tax, insurance, net_salary, month, year, payment_date, status, id))
 
             conn.commit() 
 
@@ -299,8 +310,8 @@ def delete_salary(id):
             SELECT E.FullName, S.Month, S.Year 
             FROM Salaries S 
             INNER JOIN Employees E ON S.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
-            WHERE S.SalaryID = ? AND S.IsDeleted = 0
-        """, id)
+            WHERE S.SalaryID = %s AND S.IsDeleted = 0
+        """, (id,))
         salary_row = cursor.fetchone()
         
         if not salary_row:
@@ -310,7 +321,7 @@ def delete_salary(id):
         info_str = f"của nhân viên {salary_row[0]} ({salary_row[1]}/{salary_row[2]})"
         log_info_str = f"of employee {salary_row[0]} ({salary_row[1]}/{salary_row[2]})"
 
-        cursor.execute("UPDATE Salaries SET IsDeleted = 1 WHERE SalaryID = ?", id)
+        cursor.execute("UPDATE Salaries SET IsDeleted = 1 WHERE SalaryID = %s", (id,))
         conn.commit()
 
         create_notification(
@@ -355,7 +366,7 @@ def delete_selected_salaries():
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        placeholders = ', '.join(['?'] * len(salary_ids))
+        placeholders = ', '.join(['%s'] * len(salary_ids))
         
         query_info = f"""
             SELECT S.SalaryID, E.FullName, S.Month, S.Year 
@@ -372,11 +383,15 @@ def delete_selected_salaries():
             cursor.execute(query_delete, tuple(salary_ids))
             
             for row in records:
+                s_id = row[0] if isinstance(row, tuple) else row.SalaryID
+                emp_name = row[1] if isinstance(row, tuple) else row.FullName
+                m = row[2] if isinstance(row, tuple) else row.Month
+                y = row[3] if isinstance(row, tuple) else row.Year
                 log_activity(
                     module="Salary",
                     action="Delete",
-                    record_id=int(row[0]),
-                    description=f"Soft deleted salary record of employee {row[1]} ({row[2]}/{row[3]})."
+                    record_id=int(s_id),
+                    description=f"Soft deleted salary record of employee {emp_name} ({m}/{y})."
                 )
 
             conn.commit()
@@ -434,10 +449,13 @@ def export_salaries_csv():
         ])
 
         for row in rows:
-            writer.writerow([
-                row.SalaryID, row.SalaryCode, row.FullName, row.BaseSalary, row.Bonus, row.Allowance,
-                row.OvertimePay, row.Deduction, row.Tax, row.Insurance, row.NetSalary, row.Month, row.Year, row.PaymentDate, row.Status
-            ])
+            if isinstance(row, tuple):
+                writer.writerow(list(row))
+            else:
+                writer.writerow([
+                    row.SalaryID, row.SalaryCode, row.FullName, row.BaseSalary, row.Bonus, row.Allowance,
+                    row.OvertimePay, row.Deduction, row.Tax, row.Insurance, row.NetSalary, row.Month, row.Year, row.PaymentDate, row.Status
+                ])
 
         log_activity(
             module="Salary",

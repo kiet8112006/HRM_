@@ -33,9 +33,19 @@ contract_bp = Blueprint("contract", __name__)
 
 # --- CÁC HÀM HỖ TRỢ LẤY DANH MỤC CÓ CACHE ---
 def get_cached_active_employees():
-    from app import cache
-    @cache.cached(timeout=60, key_prefix='contract_employees_list')
-    def query_db():
+    try:
+        from app import cache
+        @cache.cached(timeout=60, key_prefix='contract_employees_list')
+        def query_db():
+            conn = get_connection()
+            cursor = conn.cursor()
+            try:
+                cursor.execute("SELECT EmployeeID, FullName FROM Employees WHERE IsDeleted = 0 ORDER BY FullName")
+                return cursor.fetchall()
+            finally:
+                conn.close()
+        return query_db()
+    except Exception:
         conn = get_connection()
         cursor = conn.cursor()
         try:
@@ -43,12 +53,21 @@ def get_cached_active_employees():
             return cursor.fetchall()
         finally:
             conn.close()
-    return query_db()
 
 def get_cached_departments():
-    from app import cache
-    @cache.cached(timeout=60, key_prefix='contract_departments_list')
-    def query_db():
+    try:
+        from app import cache
+        @cache.cached(timeout=60, key_prefix='contract_departments_list')
+        def query_db():
+            conn = get_connection()
+            cursor = conn.cursor()
+            try:
+                cursor.execute("SELECT DepartmentID, DepartmentName FROM Departments WHERE IsDeleted = 0 ORDER BY DepartmentName")
+                return cursor.fetchall()
+            finally:
+                conn.close()
+        return query_db()
+    except Exception:
         conn = get_connection()
         cursor = conn.cursor()
         try:
@@ -56,12 +75,21 @@ def get_cached_departments():
             return cursor.fetchall()
         finally:
             conn.close()
-    return query_db()
 
 def get_cached_positions():
-    from app import cache
-    @cache.cached(timeout=60, key_prefix='contract_positions_list')
-    def query_db():
+    try:
+        from app import cache
+        @cache.cached(timeout=60, key_prefix='contract_positions_list')
+        def query_db():
+            conn = get_connection()
+            cursor = conn.cursor()
+            try:
+                cursor.execute("SELECT PositionID, PositionName FROM Positions WHERE IsDeleted = 0 ORDER BY PositionName")
+                return cursor.fetchall()
+            finally:
+                conn.close()
+        return query_db()
+    except Exception:
         conn = get_connection()
         cursor = conn.cursor()
         try:
@@ -69,7 +97,6 @@ def get_cached_positions():
             return cursor.fetchall()
         finally:
             conn.close()
-    return query_db()
 
 
 # =====================================================================
@@ -93,8 +120,8 @@ def contracts():
             FROM Contracts C
             LEFT JOIN Employees E ON C.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
             WHERE C.IsDeleted = 0 
-              AND (C.ContractCode LIKE ? OR E.FullName LIKE ?)
-              AND C.Status LIKE ?
+              AND (C.ContractCode ILIKE %s OR E.FullName ILIKE %s)
+              AND C.Status ILIKE %s
         """, (f"%{keyword}%", f"%{keyword}%", f"%{status}%"))
         total_records = cursor.fetchone()[0]
 
@@ -107,11 +134,11 @@ def contracts():
             LEFT JOIN Departments D ON C.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON C.PositionID = P.PositionID AND P.IsDeleted = 0
             WHERE C.IsDeleted = 0 
-              AND (C.ContractCode LIKE ? OR E.FullName LIKE ?)
-              AND C.Status LIKE ?
+              AND (C.ContractCode ILIKE %s OR E.FullName ILIKE %s)
+              AND C.Status ILIKE %s
             ORDER BY C.ContractID DESC
-            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY 
-        """, (f"%{keyword}%", f"%{keyword}%", f"%{status}%", offset, per_page))
+            LIMIT %s OFFSET %s
+        """, (f"%{keyword}%", f"%{keyword}%", f"%{status}%", per_page, offset))
         contracts_list = cursor.fetchall()
 
         total_pages = max(1, (total_records + per_page - 1) // per_page)
@@ -168,7 +195,7 @@ def add_contract():
                 filename = save_contract(file)
 
             # 3. Kiểm tra trùng mã hợp đồng
-            cursor.execute("SELECT COUNT(*) FROM Contracts WHERE ContractCode = ? AND IsDeleted = 0", (contract_code,))
+            cursor.execute("SELECT COUNT(*) FROM Contracts WHERE ContractCode = %s AND IsDeleted = 0", (contract_code,))
             if cursor.fetchone()[0] > 0:
                 raise ContractValidationError('Mã hợp đồng đã tồn tại!')
 
@@ -178,12 +205,12 @@ def add_contract():
                     EmployeeID, ContractCode, ContractNumber, ContractType, StartDate, EndDate, 
                     BasicSalary, WorkLocation, DepartmentID, PositionID, Signer, SignDate, 
                     ProbationMonths, ContractFile, Description, Status, IsDeleted
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0)
             """, (employee_id, contract_code, contract_number, contract_type, start_date, end_date,
                   basic_salary, work_location, department_id, position_id, signer, sign_date,
                   probation_months, filename, description, status))
             
-            cursor.execute("SELECT FullName FROM Employees WHERE EmployeeID = ?", (employee_id,))
+            cursor.execute("SELECT FullName FROM Employees WHERE EmployeeID = %s", (employee_id,))
             emp_row = cursor.fetchone()
             emp_name = emp_row[0] if emp_row else ""
             
@@ -226,7 +253,7 @@ def edit_contract(id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT * FROM Contracts WHERE ContractID = ? AND IsDeleted = 0", (id,))
+        cursor.execute("SELECT * FROM Contracts WHERE ContractID = %s AND IsDeleted = 0", (id,))
         contract = cursor.fetchone()
         if not contract:
             flash("Hợp đồng không tồn tại hoặc đã bị xóa!", "danger")
@@ -257,11 +284,11 @@ def edit_contract(id):
             validate_contract_description(description)
             start_date, end_date = validate_contract_dates(start_date_str, end_date_str)
 
-            cursor.execute("SELECT COUNT(*) FROM Contracts WHERE ContractCode = ? AND ContractID <> ? AND IsDeleted = 0", (contract_code, id))
+            cursor.execute("SELECT COUNT(*) FROM Contracts WHERE ContractCode = %s AND ContractID <> %s AND IsDeleted = 0", (contract_code, id))
             if cursor.fetchone()[0] > 0:
                 raise ContractValidationError('Mã hợp đồng đã tồn tại!')
 
-            old_file = contract.ContractFile
+            old_file = contract[14] if isinstance(contract, tuple) else getattr(contract, 'ContractFile', None)
             filename = old_file
             file = request.files.get('contract_file')
             if file and file.filename != '':
@@ -273,15 +300,15 @@ def edit_contract(id):
 
             cursor.execute("""
                 UPDATE Contracts SET 
-                    EmployeeID = ?, ContractCode = ?, ContractNumber = ?, ContractType = ?, StartDate = ?, EndDate = ?, 
-                    BasicSalary = ?, WorkLocation = ?, DepartmentID = ?, PositionID = ?, Signer = ?, SignDate = ?, 
-                    ProbationMonths = ?, ContractFile = ?, Description = ?, Status = ?
-                WHERE ContractID = ? AND IsDeleted = 0
+                    EmployeeID = %s, ContractCode = %s, ContractNumber = %s, ContractType = %s, StartDate = %s, EndDate = %s, 
+                    BasicSalary = %s, WorkLocation = %s, DepartmentID = %s, PositionID = %s, Signer = %s, SignDate = %s, 
+                    ProbationMonths = %s, ContractFile = %s, Description = %s, Status = %s
+                WHERE ContractID = %s AND IsDeleted = 0
             """, (employee_id, contract_code, contract_number, contract_type, start_date, end_date,
                   basic_salary, work_location, department_id, position_id, signer, sign_date,
                   probation_months, filename, description, status, id))
             
-            cursor.execute("SELECT FullName FROM Employees WHERE EmployeeID = ?", (employee_id,))
+            cursor.execute("SELECT FullName FROM Employees WHERE EmployeeID = %s", (employee_id,))
             emp_row = cursor.fetchone()
             emp_name = emp_row[0] if emp_row else ""
             
@@ -325,18 +352,19 @@ def download_contract(id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT ContractFile FROM Contracts WHERE ContractID = ? AND IsDeleted = 0", (id,))
+        cursor.execute("SELECT ContractFile FROM Contracts WHERE ContractID = %s AND IsDeleted = 0", (id,))
         row = cursor.fetchone()
-        if not row or not row.ContractFile:
+        contract_file = row[0] if row else None
+        if not row or not contract_file:
             flash("Không tìm thấy file hợp đồng.", "danger")
             return redirect(url_for("contract.contracts"))
 
-        filepath = os.path.join(config.CONTRACT_FOLDER, row.ContractFile)
+        filepath = os.path.join(config.CONTRACT_FOLDER, contract_file)
         if not os.path.exists(filepath):
             flash("File hợp đồng không tồn tại trên hệ thống.", "danger")
             return redirect(url_for("contract.contracts"))
 
-        return send_from_directory(config.CONTRACT_FOLDER, row.ContractFile, as_attachment=True)
+        return send_from_directory(config.CONTRACT_FOLDER, contract_file, as_attachment=True)
     finally:
         conn.close()
 
@@ -347,18 +375,19 @@ def preview_contract(id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT ContractFile FROM Contracts WHERE ContractID = ? AND IsDeleted = 0", (id,))
+        cursor.execute("SELECT ContractFile FROM Contracts WHERE ContractID = %s AND IsDeleted = 0", (id,))
         row = cursor.fetchone()
-        if not row or not row.ContractFile:
+        contract_file = row[0] if row else None
+        if not row or not contract_file:
             flash("Không tìm thấy file hợp đồng.", "danger")
             return redirect(url_for("contract.contracts"))
 
-        filepath = os.path.join(config.CONTRACT_FOLDER, row.ContractFile)
+        filepath = os.path.join(config.CONTRACT_FOLDER, contract_file)
         if not os.path.exists(filepath):
             flash("File hợp đồng không tồn tại trên hệ thống.", "danger")
             return redirect(url_for("contract.contracts"))
 
-        return send_from_directory(config.CONTRACT_FOLDER, row.ContractFile, as_attachment=False)
+        return send_from_directory(config.CONTRACT_FOLDER, contract_file, as_attachment=False)
     finally:
         conn.close()
 
@@ -376,7 +405,7 @@ def delete_contract(id):
         cursor.execute("""
             SELECT C.ContractCode, E.FullName FROM Contracts C
             LEFT JOIN Employees E ON C.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
-            WHERE C.ContractID = ? AND C.IsDeleted = 0
+            WHERE C.ContractID = %s AND C.IsDeleted = 0
         """, (id,))
         row = cursor.fetchone()
         
@@ -386,7 +415,7 @@ def delete_contract(id):
             
         contract_code, emp_name = row[0], row[1]
 
-        cursor.execute("UPDATE Contracts SET IsDeleted = 1 WHERE ContractID = ?", (id,))
+        cursor.execute("UPDATE Contracts SET IsDeleted = 1 WHERE ContractID = %s", (id,))
         conn.commit()
 
         create_notification(
@@ -422,7 +451,7 @@ def delete_selected_contracts():
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        placeholders = ', '.join(['?'] * len(contract_ids))
+        placeholders = ', '.join(['%s'] * len(contract_ids))
         
         query_info = f"""
             SELECT C.ContractCode, E.FullName FROM Contracts C
@@ -487,7 +516,10 @@ def export_contracts_csv():
         ])
 
         for row in rows:
-            writer.writerow([row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]])
+            if isinstance(row, tuple):
+                writer.writerow(list(row))
+            else:
+                writer.writerow([row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]])
 
         log_activity(module="Contract", action="Export", description=f"Exported contract list ({len(rows)} records).")
 

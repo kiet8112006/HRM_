@@ -67,7 +67,8 @@ def login():
             conn = get_connection()
             cursor = conn.cursor()
             
-            cursor.execute("SELECT UserID, Username, PasswordHash, FullName, Role, IsActive FROM Users WHERE Username = ?", (username,))
+            # %s thay cho ?
+            cursor.execute("SELECT UserID, Username, PasswordHash, FullName, Role, IsActive FROM Users WHERE Username = %s", (username,))
             user = cursor.fetchone()
 
             if user is None:
@@ -84,7 +85,8 @@ def login():
                 flash('Tài khoản đã bị khóa.', 'danger')
                 return redirect(url_for('auth.login'))
 
-            cursor.execute("UPDATE Users SET LastLogin = GETDATE() WHERE UserID = ?", (user_id,))
+            # CURRENT_TIMESTAMP thay cho GETDATE() và %s thay cho ?
+            cursor.execute("UPDATE Users SET LastLogin = CURRENT_TIMESTAMP WHERE UserID = %s", (user_id,))
             conn.commit()
 
             session['user_id'] = user_id
@@ -143,7 +145,8 @@ def forgot_password():
         conn = get_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute("SELECT UserID FROM Users WHERE Username = ?", (username,))
+            # %s thay cho ?
+            cursor.execute("SELECT UserID FROM Users WHERE Username = %s", (username,))
             user = cursor.fetchone()
 
             if user is None:
@@ -151,7 +154,8 @@ def forgot_password():
                 return redirect(url_for('auth.forgot_password'))
 
             new_password_hash = hash_password(password)
-            cursor.execute("UPDATE Users SET PasswordHash = ? WHERE Username = ?", (new_password_hash, username))
+            # %s thay cho ?
+            cursor.execute("UPDATE Users SET PasswordHash = %s WHERE Username = %s", (new_password_hash, username))
             conn.commit()
 
             log_activity(
@@ -204,7 +208,8 @@ def change_password():
         conn = get_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute("SELECT PasswordHash FROM Users WHERE UserID = ?", (user_id,))
+            # %s thay cho ?
+            cursor.execute("SELECT PasswordHash FROM Users WHERE UserID = %s", (user_id,))
             user = cursor.fetchone()
 
             if not user or not verify_password(old_password, user[0]):
@@ -216,7 +221,8 @@ def change_password():
                 return redirect(url_for('auth.change_password'))
 
             new_password_hash = hash_password(new_password)
-            cursor.execute("UPDATE Users SET PasswordHash = ? WHERE UserID = ?", (new_password_hash, user_id))
+            # %s thay cho ?
+            cursor.execute("UPDATE Users SET PasswordHash = %s WHERE UserID = %s", (new_password_hash, user_id))
             conn.commit()
 
             username = session.get('username', 'Unknown')

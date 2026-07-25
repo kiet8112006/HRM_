@@ -47,35 +47,40 @@ def home():
         cursor.execute("SELECT COUNT(*) FROM Positions WHERE IsDeleted = 0") 
         total_positions = cursor.fetchone()[0]
 
+        # Thay ISNULL bằng COALESCE
         cursor.execute("""
-            SELECT ISNULL(SUM(BaseSalary + Bonus + Allowance), 0) 
+            SELECT COALESCE(SUM(BaseSalary + Bonus + Allowance), 0) 
             FROM Salaries WHERE IsDeleted = 0
         """)     
         total_salary = cursor.fetchone()[0]
         total_salary_display = format_money_short(total_salary)
 
+        # Thay MONTH(), YEAR(), GETDATE() bằng EXTRACT và CURRENT_DATE
         cursor.execute("""
             SELECT COUNT(*) FROM Employees 
             WHERE IsDeleted = 0 
-              AND MONTH(HireDate) = MONTH(GETDATE()) 
-              AND YEAR(HireDate) = YEAR(GETDATE())
+              AND EXTRACT(MONTH FROM HireDate) = EXTRACT(MONTH FROM CURRENT_DATE) 
+              AND EXTRACT(YEAR FROM HireDate) = EXTRACT(YEAR FROM CURRENT_DATE)
         """) 
         new_employees = cursor.fetchone()[0]
 
-        cursor.execute("SELECT COUNT(*) FROM LeaveRequests WHERE IsDeleted = 0 AND Status = N'Chờ duyệt'") 
+        cursor.execute("SELECT COUNT(*) FROM LeaveRequests WHERE IsDeleted = 0 AND Status = 'Chờ duyệt'") 
         leave_today = cursor.fetchone()[0]
 
         cursor.execute("""
-            SELECT ISNULL(SUM(BaseSalary + Bonus + Allowance), 0) FROM Salaries 
-            WHERE IsDeleted = 0 AND Month = MONTH(GETDATE()) AND Year = YEAR(GETDATE())
+            SELECT COALESCE(SUM(BaseSalary + Bonus + Allowance), 0) FROM Salaries 
+            WHERE IsDeleted = 0 
+              AND Month = EXTRACT(MONTH FROM CURRENT_DATE) 
+              AND Year = EXTRACT(YEAR FROM CURRENT_DATE)
         """) 
         salary_this_month = cursor.fetchone()[0]
 
+        # Thay DATEADD bằng CURRENT_DATE - INTERVAL '1 month'
         cursor.execute("""
-            SELECT ISNULL(SUM(BaseSalary + Bonus + Allowance), 0) FROM Salaries 
+            SELECT COALESCE(SUM(BaseSalary + Bonus + Allowance), 0) FROM Salaries 
             WHERE IsDeleted = 0 
-              AND Month = MONTH(DATEADD(MONTH, -1, GETDATE())) 
-              AND Year = YEAR(DATEADD(MONTH, -1, GETDATE()))
+              AND Month = EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '1 month') 
+              AND Year = EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '1 month')
         """) 
         salary_last_month = cursor.fetchone()[0]
 
@@ -103,7 +108,7 @@ def home():
         cursor.execute("""
             SELECT Month, SUM(BaseSalary + Bonus + Allowance) 
             FROM Salaries 
-            WHERE IsDeleted = 0 AND Year = YEAR(GETDATE()) 
+            WHERE IsDeleted = 0 AND Year = EXTRACT(YEAR FROM CURRENT_DATE) 
             GROUP BY Month ORDER BY Month
         """) 
         salary_data = cursor.fetchall()
@@ -114,13 +119,14 @@ def home():
             salary_months.append(f"T{row[0]}")
             salary_totals.append(float(row[1]) if row[1] is not None else 0.0)
 
-        # SỬA LỖI 1: Ép kiểu tuple raw thành dict để Jinja2 Template truy cập được thuộc tính .EndDate, .FullName, .DaysLeft
+        # Thay TOP 5 và DATEDIFF bằng LIMIT 5 và phép trừ ngày trong PostgreSQL
         cursor.execute("""
-            SELECT TOP 5 E.FullName, C.EndDate, DATEDIFF(DAY, GETDATE(), C.EndDate) AS DaysLeft 
+            SELECT E.FullName, C.EndDate, (C.EndDate - CURRENT_DATE) AS DaysLeft 
             FROM Contracts C 
             INNER JOIN Employees E ON C.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
-            WHERE C.IsDeleted = 0 AND C.EndDate >= GETDATE() 
+            WHERE C.IsDeleted = 0 AND C.EndDate >= CURRENT_DATE 
             ORDER BY C.EndDate 
+            LIMIT 5
         """) 
         expiring_contracts_raw = cursor.fetchall()
         expiring_contracts = [
@@ -132,13 +138,14 @@ def home():
             for row in expiring_contracts_raw
         ]
 
-        # SỬA LỖI 2: Ép kiểu tuple raw thành dict để Jinja2 Template đọc .FromDate, .ToDate
+        # Thay TOP 5 bằng LIMIT 5
         cursor.execute("""
-            SELECT TOP 5 E.FullName, L.FromDate, L.ToDate 
+            SELECT E.FullName, L.FromDate, L.ToDate 
             FROM LeaveRequests L 
             INNER JOIN Employees E ON L.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
-            WHERE L.IsDeleted = 0 AND L.Status = N'Chờ duyệt' 
+            WHERE L.IsDeleted = 0 AND L.Status = 'Chờ duyệt' 
             ORDER BY L.FromDate 
+            LIMIT 5
         """) 
         pending_leave_requests_raw = cursor.fetchall()
         pending_leave_requests = [
@@ -153,21 +160,21 @@ def home():
         cursor.execute("""
             SELECT COUNT(*) FROM Attendance A 
             INNER JOIN Employees E ON A.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
-            WHERE A.IsDeleted = 0 AND A.Status = N'Có mặt' 
+            WHERE A.IsDeleted = 0 AND A.Status = 'Có mặt' 
         """) 
         present_count = cursor.fetchone()[0] 
 
         cursor.execute("""
             SELECT COUNT(*) FROM Attendance A 
             INNER JOIN Employees E ON A.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
-            WHERE A.IsDeleted = 0 AND A.Status = N'Đi trễ' 
+            WHERE A.IsDeleted = 0 AND A.Status = 'Đi trễ' 
         """) 
         late_count = cursor.fetchone()[0]                            
 
         cursor.execute("""
             SELECT COUNT(*) FROM Attendance A 
             INNER JOIN Employees E ON A.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
-            WHERE A.IsDeleted = 0 AND A.Status = N'Nghỉ' 
+            WHERE A.IsDeleted = 0 AND A.Status = 'Nghỉ' 
         """) 
         absent_count = cursor.fetchone()[0]                                     
 
