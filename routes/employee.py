@@ -109,7 +109,7 @@ def employees():
             SELECT E.EmployeeID,
                    'NV' || LPAD(CAST(E.EmployeeID AS TEXT), 4, '0') AS EmployeeCode,
                    E.FullName, 
-                   E.photo,
+                   E.Photo,
                    E.Gender,
                    E.Phone,
                    E.Email,
