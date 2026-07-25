@@ -45,8 +45,8 @@ def init_database():
                 DepartmentName VARCHAR(100) NOT NULL,
                 Description TEXT,
                 Location VARCHAR(100),
+                ManagerID INT REFERENCES Employees(EmployeeID) ON DELETE SET NULL,
                 Status VARCHAR(20) DEFAULT 'Active',
-                ManagerID INT,
                 IsDeleted INT DEFAULT 0
             );
 
@@ -77,6 +77,9 @@ def init_database():
                 MaritalStatus VARCHAR(20),
                 EmergencyContact VARCHAR(100),
                 EmergencyPhone VARCHAR(20),
+                Photo VARCHAR(255),
+                CitizenFrontPhoto VARCHAR(255),
+                CitizenBackPhoto VARCHAR(255),
                 IsDeleted INT DEFAULT 0
             );
 

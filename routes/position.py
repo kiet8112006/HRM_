@@ -14,6 +14,8 @@ from validators.position_validator import (
     normalize_position_name
 )
 from exceptions.validator.position import PositionValidationError
+from routes.audit import log_activity
+from utils.notification_service import create_notification
 
 # Khai báo Blueprint
 position_bp = Blueprint('position', __name__)
@@ -42,8 +44,8 @@ def positions():
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Base query (Thêm lọc IsDeleted nếu có hoặc giữ nguyên WHERE 1=1)
-    sql_base = "FROM Positions WHERE 1=1"
+    # Base query lọc theo IsDeleted = 0
+    sql_base = "FROM Positions WHERE IsDeleted = 0"
     params = []
 
     if keyword:
@@ -78,7 +80,6 @@ def positions():
         cursor.execute(data_sql, tuple(params_data))
         position_list = cursor.fetchall()
     except Exception:
-        # Fallback nếu câu truy vấn gặp sự cố
         fallback_sql = f"SELECT PositionID, PositionCode, PositionName, PositionLevel, MinSalary, MaxSalary, Status, Description {sql_base} ORDER BY PositionLevel ASC, PositionID DESC"
         cursor.execute(fallback_sql, tuple(params))
         position_list = cursor.fetchall()
@@ -118,7 +119,6 @@ def add_position():
         description = request.form.get('description', '').strip()
 
         try:
-            # Validator
             validate_position_code(code)
             validate_position_name(name)
             level = validate_position_level(level_str)
@@ -129,19 +129,28 @@ def add_position():
             conn = get_connection()
             cursor = conn.cursor()
 
-            # Kiểm tra trùng mã chức vụ (đổi ? thành %s)
-            cursor.execute("SELECT PositionID FROM Positions WHERE PositionCode = %s", (code,))
+            # Kiểm tra trùng mã chức vụ trong số các bản ghi chưa xóa
+            cursor.execute("SELECT PositionID FROM Positions WHERE PositionCode = %s AND IsDeleted = 0", (code,))
             if cursor.fetchone():
                 conn.close()
                 raise PositionValidationError('Mã chức vụ này đã tồn tại trong hệ thống!')
 
-            # Insert DB (đổi ? thành %s)
             insert_sql = """
-                INSERT INTO Positions (PositionCode, PositionName, PositionLevel, MinSalary, MaxSalary, Status, Description)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO Positions (PositionCode, PositionName, PositionLevel, MinSalary, MaxSalary, Status, Description, IsDeleted)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, 0)
             """
             cursor.execute(insert_sql, (code, name, level, min_salary, max_salary, status, description))
             conn.commit()
+            
+            create_notification(
+                title='Chức vụ mới',
+                message=f'Chức vụ {name} ({code}) đã được thêm vào hệ thống.',
+                type='Success',
+                receiver_role='Admin',
+                url='/positions'
+            )
+            log_activity(module="Position", action="Create", description=f"Created position {name}.")
+            
             conn.close()
 
             flash('Thêm chức vụ thành công!', 'success')
@@ -186,8 +195,8 @@ def edit_position(id):
             validate_position_status(status)
             validate_position_description(description)
 
-            # Kiểm tra trùng mã (đổi ? thành %s)
-            cursor.execute("SELECT PositionID FROM Positions WHERE PositionCode = %s AND PositionID != %s", (code, id))
+            # Kiểm tra trùng mã với các chức vụ khác chưa xóa
+            cursor.execute("SELECT PositionID FROM Positions WHERE PositionCode = %s AND PositionID != %s AND IsDeleted = 0", (code, id))
             if cursor.fetchone():
                 conn.close()
                 raise PositionValidationError('Mã chức vụ này đã bị trùng với chức vụ khác!')
@@ -199,6 +208,16 @@ def edit_position(id):
             """
             cursor.execute(update_sql, (code, name, level, min_salary, max_salary, status, description, id))
             conn.commit()
+            
+            create_notification(
+                title='Cập nhật chức vụ',
+                message=f'Chức vụ {name} đã được cập nhật thông tin.',
+                type='Info',
+                receiver_role='Admin',
+                url='/positions'
+            )
+            log_activity(module="Position", action="Update", record_id=id, description=f"Updated position {name}.")
+            
             conn.close()
 
             flash('Cập nhật chức vụ thành công!', 'success')
@@ -209,18 +228,18 @@ def edit_position(id):
         except Exception as e:
             flash(f'Lỗi hệ thống: {str(e)}', 'danger')
 
-    cursor.execute("SELECT PositionID, PositionCode, PositionName, PositionLevel, MinSalary, MaxSalary, Status, Description FROM Positions WHERE PositionID = %s", (id,))
+    cursor.execute("SELECT PositionID, PositionCode, PositionName, PositionLevel, MinSalary, MaxSalary, Status, Description FROM Positions WHERE PositionID = %s AND IsDeleted = 0", (id,))
     position_data = cursor.fetchone()
     conn.close()
 
     if not position_data:
-        flash('Không tìm thấy chức vụ!', 'danger')
+        flash('Không tìm thấy chức vụ hoặc chức vụ đã bị xóa!', 'danger')
         return redirect(url_for('position.positions'))
 
     return render_template('position/edit_position.html', position=position_data)
 
 # ---------------------------------------------------------------------
-# 4. XÓA 1 CHỨC VỤ
+# 4. XÓA 1 CHỨC VỤ (XÓA MỀM)
 # ---------------------------------------------------------------------
 @position_bp.route('/delete_position/<int:id>')
 def delete_position(id):
@@ -232,14 +251,32 @@ def delete_position(id):
     cursor = conn.cursor()
 
     try:
-        # Kiểm tra xem có nhân viên nào đang giữ chức vụ này không (đổi ? thành %s)
+        cursor.execute("SELECT PositionName FROM Positions WHERE PositionID = %s AND IsDeleted = 0", (id,))
+        pos_row = cursor.fetchone()
+        if not pos_row:
+            flash('Chức vụ không tồn tại hoặc đã bị xóa trước đó!', 'danger')
+            return redirect(url_for('position.positions'))
+        
+        position_name = pos_row[0]
+
+        # Kiểm tra xem có nhân viên nào đang giữ chức vụ này không
         cursor.execute("SELECT COUNT(*) FROM Employees WHERE PositionID = %s AND COALESCE(IsDeleted, 0) = 0", (id,))
         if cursor.fetchone()[0] > 0:
             flash('Không thể xóa chức vụ này vì đang có nhân viên giữ chức vụ!', 'danger')
         else:
-            cursor.execute("DELETE FROM Positions WHERE PositionID = %s", (id,))
+            cursor.execute("UPDATE Positions SET IsDeleted = 1 WHERE PositionID = %s", (id,))
             conn.commit()
-            flash('Xóa chức vụ thành công!', 'success')
+            
+            create_notification(
+                title='Xóa chức vụ',
+                message=f'Chức vụ {position_name} đã bị xóa khỏi hệ thống.',
+                type='Warning',
+                receiver_role='Admin',
+                url='/positions'
+            )
+            log_activity(module="Position", action="Delete", record_id=id, description=f"Soft deleted position {position_name}.")
+            
+            flash('Xóa chức vụ thành công (Xóa mềm)!', 'success')
     except Exception as e:
         conn.rollback()
         flash(f'Lỗi khi xóa: {str(e)}', 'danger')
@@ -249,7 +286,7 @@ def delete_position(id):
     return redirect(url_for('position.positions'))
 
 # ---------------------------------------------------------------------
-# 5. XÓA HÀNG LOẠT (BULK DELETE)
+# 5. XÓA HÀNG LOẠT (BULK DELETE - XÓA MỀM)
 # ---------------------------------------------------------------------
 @position_bp.route('/delete_selected_positions', methods=['POST'])
 def delete_selected_positions():
@@ -266,10 +303,50 @@ def delete_selected_positions():
     cursor = conn.cursor()
 
     try:
-        format_strings = ','.join(['%s'] * len(position_ids))
-        cursor.execute(f"DELETE FROM Positions WHERE PositionID IN ({format_strings})", tuple(position_ids))
-        conn.commit()
-        flash(f'Đã xóa thành công {len(position_ids)} chức vụ!', 'success')
+        valid_delete_ids = []
+        failed_count = 0
+
+        for pos_id in position_ids:
+            cursor.execute("SELECT COUNT(*) FROM Employees WHERE PositionID = %s AND COALESCE(IsDeleted, 0) = 0", (pos_id,))
+            if cursor.fetchone()[0] > 0:
+                failed_count += 1
+            else:
+                valid_delete_ids.append(pos_id)
+
+        if len(valid_delete_ids) > 0:
+            format_strings = ','.join(['%s'] * len(valid_delete_ids))
+            
+            cursor.execute(f"SELECT PositionID, PositionName FROM Positions WHERE PositionID IN ({format_strings}) AND IsDeleted = 0", tuple(valid_delete_ids))
+            records = cursor.fetchall()
+            deleted_count = len(records)
+
+            if deleted_count > 0:
+                cursor.execute(f"UPDATE Positions SET IsDeleted = 1 WHERE PositionID IN ({format_strings})", tuple(valid_delete_ids))
+                
+                for row in records:
+                    p_id = row[0] if isinstance(row, tuple) else row.PositionID
+                    p_name = row[1] if isinstance(row, tuple) else row.PositionName
+                    log_activity(module="Position", action="Delete", record_id=int(p_id), description=f"Soft deleted position {p_name}.")
+
+                conn.commit()
+                
+                create_notification(
+                    title='Xóa nhiều chức vụ',
+                    message=f'Đã xóa thành công {deleted_count} chức vụ được chọn (Xóa mềm).',
+                    type='Warning',
+                    receiver_role='Admin',
+                    url='/positions'
+                )
+
+                if failed_count > 0:
+                    flash(f'Đã xóa thành công {deleted_count} chức vụ. Không thể xóa {failed_count} chức vụ do còn nhân viên đang giữ!', 'warning')
+                else:
+                    flash(f'Đã xóa thành công {deleted_count} chức vụ được chọn!', 'success')
+            else:
+                flash('Không tìm thấy chức vụ hợp lệ nào để xóa!', 'warning')
+        else:
+            flash(f'Không thể xóa do toàn bộ {failed_count} chức vụ đã chọn đều đang có nhân viên giữ!', 'danger')
+
     except Exception as e:
         conn.rollback()
         flash(f'Không thể xóa các chức vụ đã chọn do ràng buộc dữ liệu!', 'danger')
@@ -289,7 +366,7 @@ def export_positions_csv():
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT PositionID, PositionCode, PositionName, PositionLevel, MinSalary, MaxSalary, Status, Description FROM Positions ORDER BY PositionLevel ASC")
+    cursor.execute("SELECT PositionID, PositionCode, PositionName, PositionLevel, MinSalary, MaxSalary, Status, Description FROM Positions WHERE IsDeleted = 0 ORDER BY PositionLevel ASC")
     rows = cursor.fetchall()
     conn.close()
 
@@ -304,6 +381,8 @@ def export_positions_csv():
             writer.writerow(list(r))
         else:
             writer.writerow([r.PositionID, r.PositionCode, r.PositionName, r.PositionLevel, r.MinSalary, r.MaxSalary, r.Status, r.Description])
+
+    log_activity(module="Position", action="Export", description=f"Exported position list ({len(rows)} records).")
 
     output.seek(0)
     return Response(

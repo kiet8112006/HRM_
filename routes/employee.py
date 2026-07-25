@@ -80,9 +80,9 @@ def get_cached_positions():
 # =====================================================================
 # 1. ROUTE: DANH SÁCH NHÂN VIÊN & PHÂN TRANG & TÌM KIẾM
 # =====================================================================
+@employee_bp.route("/employees")
 @login_required
 @role_required('Admin', 'Manager')
-@employee_bp.route("/employees")
 def employees():
     keyword = request.args.get("keyword", "").strip()
     department = request.args.get("department", "")
@@ -161,17 +161,13 @@ def employees():
 # =====================================================================
 # 2. ROUTE: THÊM MỚI NHÂN VIÊN
 # =====================================================================
-# =====================================================================
-# 2. ROUTE: THÊM MỚI NHÂN VIÊN
-# =====================================================================
 @employee_bp.route("/add_employee", methods=["GET", "POST"])
 @login_required
 @role_required('Admin')
 def add_employee():
-    conn = get_connection()
-    cursor = conn.cursor()
-    
     if request.method == "POST":
+        conn = get_connection()
+        cursor = conn.cursor()
         try:
             photo = request.files.get('photo')
             citizen_front = request.files.get('citizen_front')
@@ -268,14 +264,16 @@ def add_employee():
         except Exception as e:
             conn.rollback()
             current_app.logger.error(f"Lỗi thêm nhân viên: {str(e)}")
-            flash("Đã có lỗi hệ thống xảy ra. Vui lòng thử lại sau!", 'danger')
+            flash(f"Đã có lỗi hệ thống xảy ra: {str(e)}", 'danger')
             return redirect(request.url)
         finally:
             conn.close()
 
+    departments = get_cached_departments()
+    positions = get_cached_positions()
+    conn = get_connection()
+    cursor = conn.cursor()
     try:
-        departments = get_cached_departments()
-        positions = get_cached_positions()
         cursor.execute("""SELECT EmployeeID, FullName FROM Employees WHERE IsDeleted = 0 ORDER BY FullName""")
         managers = cursor.fetchall()
         return render_template(
@@ -286,6 +284,7 @@ def add_employee():
         )
     finally:
         conn.close()
+
 
 # =====================================================================
 # 3. ROUTE: CHỈNH SỬA THÔNG TIN NHÂN VIÊN
