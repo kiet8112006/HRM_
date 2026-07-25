@@ -68,22 +68,22 @@ app.config["UPLOAD_FOLDER"] = config.UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = config.MAX_CONTENT_LENGTH
 @app.context_processor
 def inject_notification_count():
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT COUNT(*)
-        FROM Notifications
-        WHERE IsRead = 0
-    """)
-
-    unread_count = cursor.fetchone()[0]
-
-    conn.close()
+    unread_count = 0
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT COUNT(*)
+            FROM Notifications
+            WHERE IsRead = 0
+        """)
+        unread_count = cursor.fetchone()[0]
+        conn.close()
+    except Exception as e:
+        app.logger.warning(f"Không thể kết nối CSDL để lấy thông báo: {str(e)}")
+        unread_count = 0
 
     return dict(unread_count=unread_count)
-
 # Thêm đoạn này vào cuối file app.py (trước dòng if __name__ == "__main__":)
 @app.errorhandler(429)
 def ratelimit_handler(e):
