@@ -114,9 +114,9 @@ def employees():
 
         cursor.execute("""
             SELECT E.EmployeeID,
-                   COALESCE(E.CitizenID, 'NV' || LPAD(CAST(E.EmployeeID AS TEXT), 4, '0')) AS EmployeeCode,
+                   COALESCE(E.EmployeeCode, 'NV' || LPAD(CAST(E.EmployeeID AS TEXT), 4, '0')) AS EmployeeCode,
                    E.FullName, 
-                   E.Photo,
+                   E."Photo",
                    E.Gender,
                    E.Phone,
                    E.Email,
@@ -240,7 +240,7 @@ def add_employee():
                 INSERT INTO Employees (
                     FullName, Gender, DOB, HireDate, Email, Phone, DepartmentID, PositionID, 
                     ManagerID, Status, CitizenID, Address, Nationality, MaritalStatus, 
-                    EmergencyContact, EmergencyPhone, Photo, CitizenFrontPhoto, CitizenBackPhoto, IsDeleted
+                    EmergencyContact, EmergencyPhone, "Photo", CitizenFrontPhoto, CitizenBackPhoto, IsDeleted
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0)
             """, (fullname, gender, dob, hiredate, email, phone, department_id, position_id, 
@@ -390,7 +390,7 @@ def edit_employee(id):
                 SET FullName = %s, Gender = %s, DOB = %s, HireDate = %s, Email = %s, Phone = %s, 
                     DepartmentID = %s, PositionID = %s, ManagerID = %s, Status = %s, CitizenID = %s, 
                     Address = %s, Nationality = %s, MaritalStatus = %s, EmergencyContact = %s, 
-                    EmergencyPhone = %s, Photo = %s, CitizenFrontPhoto = %s, CitizenBackPhoto = %s
+                    EmergencyPhone = %s, "Photo" = %s, CitizenFrontPhoto = %s, CitizenBackPhoto = %s
                 WHERE EmployeeID = %s 
             """, (fullname, gender, dob, hiredate, email, phone, department_id, position_id, 
                  manager_id, status, citizenid, address, nationality, maritalstatus, 
@@ -533,7 +533,7 @@ def employee_detail(id):
     cursor = conn.cursor()
     try:
         cursor.execute(""" 
-            SELECT E.EmployeeID, COALESCE(E.CitizenID, 'NV' || LPAD(CAST(E.EmployeeID AS TEXT), 4, '0')) AS EmployeeCode, 
+            SELECT E.EmployeeID, COALESCE(E.EmployeeCode, 'NV' || LPAD(CAST(E.EmployeeID AS TEXT), 4, '0')) AS EmployeeCode, 
                    E.FullName, E.Gender, E.DOB, E.Phone, E.Email, E.CitizenID, E.Address, 
                    E.Nationality, E.MaritalStatus, E.EmergencyContact, E.EmergencyPhone, E.HireDate, E.Status, 
                    D.DepartmentName, P.PositionName 
