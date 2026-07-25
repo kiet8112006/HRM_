@@ -109,7 +109,7 @@ def employees():
             SELECT E.EmployeeID,
                    'NV' || LPAD(CAST(E.EmployeeID AS TEXT), 4, '0') AS EmployeeCode,
                    E.FullName, 
-                   E."Photo",
+                   E.photo,
                    E.Gender,
                    E.Phone,
                    E.Email,
@@ -204,7 +204,7 @@ def add_employee():
                 INSERT INTO Employees (
                     FullName, Gender, DOB, HireDate, Email, Phone, DepartmentID, PositionID, 
                     ManagerID, Status, CitizenID, Address, Nationality, MaritalStatus, 
-                    EmergencyContact, EmergencyPhone, "Photo", CitizenFrontPhoto, CitizenBackPhoto, IsDeleted
+                    EmergencyContact, EmergencyPhone, photo, CitizenFrontPhoto, CitizenBackPhoto, IsDeleted
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0)
             """, (fullname, gender, dob, hiredate, email, phone, department_id, position_id, 
