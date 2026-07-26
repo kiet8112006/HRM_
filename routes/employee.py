@@ -26,9 +26,22 @@ from utils.upload import (
     save_citizen_back
 )
 from routes.audit import log_activity 
-import psycopg2.extras
 
 employee_bp = Blueprint("employee", __name__)
+
+# Hàm hỗ trợ chuyển đổi pyodbc.Row thành dict để giữ tương thích với giao diện Flask Jinja2
+def row_to_dict(cursor, row):
+    if row is None:
+        return None
+    columns = [column[0] for column in cursor.description]
+    return dict(zip(columns, row))
+
+def rows_to_dict_list(cursor, rows):
+    if not rows:
+        return []
+    columns = [column[0] for column in cursor.description]
+    return [dict(zip(columns, row)) for row in rows]
+
 
 def get_cached_departments():
     try:
@@ -36,21 +49,24 @@ def get_cached_departments():
         @cache.cached(timeout=60, key_prefix='departments_list')
         def query_db():
             conn = get_connection()
-            cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cursor = conn.cursor()
             try:
                 cursor.execute("SELECT DepartmentID, DepartmentName FROM Departments WHERE IsDeleted = 0 ORDER BY DepartmentName")
-                return cursor.fetchall()
+                rows = cursor.fetchall()
+                return rows_to_dict_list(cursor, rows)
             finally:
                 conn.close()
         return query_db()
     except Exception:
         conn = get_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor()
         try:
             cursor.execute("SELECT DepartmentID, DepartmentName FROM Departments WHERE IsDeleted = 0 ORDER BY DepartmentName")
-            return cursor.fetchall()
+            rows = cursor.fetchall()
+            return rows_to_dict_list(cursor, rows)
         finally:
             conn.close()
+
 
 def get_cached_positions():
     try:
@@ -58,22 +74,24 @@ def get_cached_positions():
         @cache.cached(timeout=60, key_prefix='positions_list')
         def query_db():
             conn = get_connection()
-            cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cursor = conn.cursor()
             try:
                 cursor.execute("SELECT PositionID, PositionName FROM Positions WHERE IsDeleted = 0 ORDER BY PositionName")
-                return cursor.fetchall()
+                rows = cursor.fetchall()
+                return rows_to_dict_list(cursor, rows)
             finally:
                 conn.close()
         return query_db()
     except Exception:
         conn = get_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor()
         try:
             cursor.execute("SELECT PositionID, PositionName FROM Positions WHERE IsDeleted = 0 ORDER BY PositionName")
-            return cursor.fetchall()
+            rows = cursor.fetchall()
+            return rows_to_dict_list(cursor, rows)
         finally:
-        # Sử dụng RealDictCursor để kết quả trả về dưới dạng từ điển
             conn.close()
+
 
 @employee_bp.route("/employees")
 @login_required
@@ -92,24 +110,27 @@ def employees():
     positions = get_cached_positions()
 
     conn = get_connection()
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor = conn.cursor()
     try:
+        # Trong SQL Server, dùng LIKE và tham số ?
         cursor.execute("""
             SELECT COUNT(*) 
             FROM Employees E 
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
             WHERE E.IsDeleted = 0
-              AND E.FullName ILIKE %s
-              AND COALESCE(D.DepartmentName, '') ILIKE %s
-              AND COALESCE(P.PositionName, '') ILIKE %s
-              AND COALESCE(E.Status, 'Active') ILIKE %s
+              AND E.FullName LIKE ?
+              AND ISNULL(D.DepartmentName, '') LIKE ?
+              AND ISNULL(P.PositionName, '') LIKE ?
+              AND ISNULL(E.Status, 'Active') LIKE ?
         """, (f"%{keyword}%", f"%{department}%", f"%{position}%", f"%{status}%"))
-        total_records = cursor.fetchone()['count']
+        total_records = cursor.fetchone()[0]
 
+        # Phân trang trong SQL Server bằng OFFSET ... ROWS FETCH NEXT ... ROWS ONLY
+        # Ghép chuỗi Mã Nhân Viên bằng RIGHT('0000' + ..., 4)
         cursor.execute("""
             SELECT E.EmployeeID,
-                   'NV' || LPAD(CAST(E.EmployeeID AS TEXT), 4, '0') AS EmployeeCode,
+                   'NV' + RIGHT('0000' + CAST(E.EmployeeID AS VARCHAR(10)), 4) AS EmployeeCode,
                    E.FullName, 
                    E.photo AS Photo,
                    E.CitizenFrontPhoto AS CitizenFront,
@@ -117,21 +138,22 @@ def employees():
                    E.Gender,
                    E.Phone,
                    E.Email,
-                   COALESCE(E.Status, 'Active') AS Status,
+                   ISNULL(E.Status, 'Active') AS Status,
                    D.DepartmentName,
                    P.PositionName
             FROM Employees E
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
             WHERE E.IsDeleted = 0
-              AND E.FullName ILIKE %s 
-              AND COALESCE(D.DepartmentName, '') ILIKE %s
-              AND COALESCE(P.PositionName, '') ILIKE %s
-              AND COALESCE(E.Status, 'Active') ILIKE %s
+              AND E.FullName LIKE ? 
+              AND ISNULL(D.DepartmentName, '') LIKE ?
+              AND ISNULL(P.PositionName, '') LIKE ?
+              AND ISNULL(E.Status, 'Active') LIKE ?
             ORDER BY E.EmployeeID DESC
-            LIMIT %s OFFSET %s
-        """, (f"%{keyword}%", f"%{department}%", f"%{position}%", f"%{status}%", per_page, offset))
-        employees_list = cursor.fetchall()
+            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+        """, (f"%{keyword}%", f"%{department}%", f"%{position}%", f"%{status}%", offset, per_page))
+        
+        employees_list = rows_to_dict_list(cursor, cursor.fetchall())
      
         total_pages = max(1, (total_records + per_page - 1) // per_page)
 
@@ -153,6 +175,7 @@ def employees():
         return render_template("employee/employees.html", employees=[], page=1, total_pages=1)
     finally:
         conn.close()
+
 
 @employee_bp.route("/add_employee", methods=["GET", "POST"])
 @login_required
@@ -210,7 +233,7 @@ def add_employee():
                     ManagerID, Status, CitizenID, Address, Nationality, MaritalStatus, 
                     EmergencyContact, EmergencyPhone, photo, CitizenFrontPhoto, CitizenBackPhoto, IsDeleted
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
             """, (fullname, gender, dob, hiredate, email, phone, department_id, position_id, 
                  manager_id, status, citizenid, address, nationality, maritalstatus, 
                  emergencycontact, emergencyphone, photo_filename, citizen_front_filename, citizen_back_filename))
@@ -234,23 +257,24 @@ def add_employee():
     departments = get_cached_departments()
     positions = get_cached_positions()
     conn = get_connection()
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor = conn.cursor()
     try:
         cursor.execute("""SELECT EmployeeID, FullName FROM Employees WHERE IsDeleted = 0 ORDER BY FullName""")
-        managers = cursor.fetchall()
+        managers = rows_to_dict_list(cursor, cursor.fetchall())
         return render_template("employee/add_employee.html", departments=departments, positions=positions, managers=managers)
     finally:
         conn.close()
+
 
 @employee_bp.route("/edit_employee/<int:id>", methods=["GET", "POST"])
 @login_required
 @role_required('Admin', 'Manager')
 def edit_employee(id):
     conn = get_connection()
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor = conn.cursor()
     try:
-        cursor.execute("""SELECT * FROM Employees WHERE EmployeeID = %s AND IsDeleted = 0""", (id,))
-        employee = cursor.fetchone()
+        cursor.execute("""SELECT * FROM Employees WHERE EmployeeID = ? AND IsDeleted = 0""", (id,))
+        employee = row_to_dict(cursor, cursor.fetchone())
 
         if not employee:
             flash('Nhân viên không tồn tại hoặc đã bị xóa!', 'danger')
@@ -276,11 +300,11 @@ def edit_employee(id):
 
             cursor.execute("""
                 UPDATE Employees
-                SET FullName = %s, Gender = %s, DOB = %s, HireDate = %s, Email = %s, Phone = %s, 
-                    DepartmentID = %s, PositionID = %s, ManagerID = %s, Status = %s, CitizenID = %s, 
-                    Address = %s, Nationality = %s, MaritalStatus = %s, EmergencyContact = %s, 
-                    EmergencyPhone = %s
-                WHERE EmployeeID = %s 
+                SET FullName = ?, Gender = ?, DOB = ?, HireDate = ?, Email = ?, Phone = ?, 
+                    DepartmentID = ?, PositionID = ?, ManagerID = ?, Status = ?, CitizenID = ?, 
+                    Address = ?, Nationality = ?, MaritalStatus = ?, EmergencyContact = ?, 
+                    EmergencyPhone = ?
+                WHERE EmployeeID = ? 
             """, (fullname, gender, dob, hiredate, email, phone, department_id, position_id, 
                  manager_id, status, citizenid, address, nationality, maritalstatus, 
                  emergencycontact, emergencyphone, id))
@@ -300,13 +324,14 @@ def edit_employee(id):
     departments = get_cached_departments()
     positions = get_cached_positions()
     conn = get_connection()
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor = conn.cursor()
     try:
         cursor.execute('SELECT EmployeeID, FullName FROM Employees WHERE IsDeleted = 0 ORDER BY FullName')
-        managers = cursor.fetchall()
+        managers = rows_to_dict_list(cursor, cursor.fetchall())
         return render_template("employee/edit_employee.html", employee=employee, departments=departments, positions=positions, managers=managers)
     finally:
         conn.close()
+
 
 @employee_bp.route("/delete_employee/<int:id>")
 @login_required
@@ -315,7 +340,7 @@ def delete_employee(id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("UPDATE Employees SET IsDeleted = 1 WHERE EmployeeID = %s", (id,))
+        cursor.execute("UPDATE Employees SET IsDeleted = 1 WHERE EmployeeID = ?", (id,))
         conn.commit()
         flash('Xóa nhân viên thành công!', "success")
         return redirect("/employees")
@@ -325,6 +350,7 @@ def delete_employee(id):
         return redirect("/employees")
     finally:
         conn.close()
+
 
 @employee_bp.route("/export_employees_csv")
 @login_required
@@ -361,24 +387,26 @@ def export_employees_csv():
     finally:
         conn.close()
 
+
 @employee_bp.route("/employee_detail/<int:id>")
 @login_required
 @role_required('Admin', 'Manager')
 def employee_detail(id):
     conn = get_connection()
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor = conn.cursor()
     try:
         cursor.execute(""" 
-            SELECT E.EmployeeID, 'NV' || LPAD(CAST(E.EmployeeID AS TEXT), 4, '0') AS EmployeeCode, 
+            SELECT E.EmployeeID, 
+                   'NV' + RIGHT('0000' + CAST(E.EmployeeID AS VARCHAR(10)), 4) AS EmployeeCode, 
                    E.FullName, E.Gender, E.DOB, E.Phone, E.Email, E.CitizenID, E.Address, 
                    E.Nationality, E.MaritalStatus, E.EmergencyContact, E.EmergencyPhone, E.HireDate, E.Status, 
                    D.DepartmentName, P.PositionName 
             FROM Employees E 
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
-            WHERE E.EmployeeID = %s AND E.IsDeleted = 0
+            WHERE E.EmployeeID = ? AND E.IsDeleted = 0
         """, (id,))
-        employee = cursor.fetchone()
+        employee = row_to_dict(cursor, cursor.fetchone())
 
         if not employee:
             flash('Nhân viên không tồn tại!', 'danger')
@@ -390,6 +418,7 @@ def employee_detail(id):
         return redirect("/employees")
     finally:
         conn.close()
+
 
 @employee_bp.route("/delete_selected_employees", methods=["POST"])
 @login_required
@@ -403,8 +432,11 @@ def delete_selected_employees():
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        for emp_id in employee_ids:
-            cursor.execute("UPDATE Employees SET IsDeleted = 1 WHERE EmployeeID = %s", (emp_id,))
+        # Sử dụng mệnh đề IN của SQL Server với các placeholder tương ứng
+        placeholders = ', '.join(['?'] * len(employee_ids))
+        sql = f"UPDATE Employees SET IsDeleted = 1 WHERE EmployeeID IN ({placeholders})"
+        cursor.execute(sql, employee_ids)
+        
         conn.commit()
         flash(f"Đã xóa thành công {len(employee_ids)} nhân viên!", "success")
     except Exception as e:

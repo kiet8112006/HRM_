@@ -49,12 +49,12 @@ def positions():
     params = []
 
     if keyword:
-        # PostgreSQL dùng ILIKE để tìm kiếm không phân biệt hoa thường
-        sql_base += " AND (PositionCode ILIKE %s OR PositionName ILIKE %s)"
+        # MSSQL dùng LIKE và dấu ? để tìm kiếm
+        sql_base += " AND (PositionCode LIKE ? OR PositionName LIKE ?)"
         params.extend([f"%{keyword}%", f"%{keyword}%"])
 
     if status:
-        sql_base += " AND Status = %s"
+        sql_base += " AND Status = ?"
         params.append(status)
 
     # Đếm tổng số bản ghi
@@ -66,15 +66,15 @@ def positions():
     if page > total_pages:
         page = total_pages
 
-    # Lấy dữ liệu theo trang chuẩn PostgreSQL (LIMIT %s OFFSET %s)
+    # Lấy dữ liệu theo trang chuẩn MSSQL (OFFSET ... ROWS FETCH NEXT ... ROWS ONLY)
     offset = (page - 1) * per_page
     data_sql = f"""
         SELECT PositionID, PositionCode, PositionName, PositionLevel, MinSalary, MaxSalary, Status, Description 
         {sql_base} 
         ORDER BY PositionLevel ASC, PositionID DESC 
-        LIMIT %s OFFSET %s
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
     """
-    params_data = params + [per_page, offset]
+    params_data = params + [offset, per_page]
 
     try:
         cursor.execute(data_sql, tuple(params_data))
@@ -130,14 +130,14 @@ def add_position():
             cursor = conn.cursor()
 
             # Kiểm tra trùng mã chức vụ trong số các bản ghi chưa xóa
-            cursor.execute("SELECT PositionID FROM Positions WHERE PositionCode = %s AND IsDeleted = 0", (code,))
+            cursor.execute("SELECT PositionID FROM Positions WHERE PositionCode = ? AND IsDeleted = 0", (code,))
             if cursor.fetchone():
                 conn.close()
                 raise PositionValidationError('Mã chức vụ này đã tồn tại trong hệ thống!')
 
             insert_sql = """
                 INSERT INTO Positions (PositionCode, PositionName, PositionLevel, MinSalary, MaxSalary, Status, Description, IsDeleted)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, 0)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 0)
             """
             cursor.execute(insert_sql, (code, name, level, min_salary, max_salary, status, description))
             conn.commit()
@@ -196,15 +196,15 @@ def edit_position(id):
             validate_position_description(description)
 
             # Kiểm tra trùng mã với các chức vụ khác chưa xóa
-            cursor.execute("SELECT PositionID FROM Positions WHERE PositionCode = %s AND PositionID != %s AND IsDeleted = 0", (code, id))
+            cursor.execute("SELECT PositionID FROM Positions WHERE PositionCode = ? AND PositionID != ? AND IsDeleted = 0", (code, id))
             if cursor.fetchone():
                 conn.close()
                 raise PositionValidationError('Mã chức vụ này đã bị trùng với chức vụ khác!')
 
             update_sql = """
                 UPDATE Positions
-                SET PositionCode = %s, PositionName = %s, PositionLevel = %s, MinSalary = %s, MaxSalary = %s, Status = %s, Description = %s
-                WHERE PositionID = %s
+                SET PositionCode = ?, PositionName = ?, PositionLevel = ?, MinSalary = ?, MaxSalary = ?, Status = ?, Description = ?
+                WHERE PositionID = ?
             """
             cursor.execute(update_sql, (code, name, level, min_salary, max_salary, status, description, id))
             conn.commit()
@@ -228,7 +228,7 @@ def edit_position(id):
         except Exception as e:
             flash(f'Lỗi hệ thống: {str(e)}', 'danger')
 
-    cursor.execute("SELECT PositionID, PositionCode, PositionName, PositionLevel, MinSalary, MaxSalary, Status, Description FROM Positions WHERE PositionID = %s AND IsDeleted = 0", (id,))
+    cursor.execute("SELECT PositionID, PositionCode, PositionName, PositionLevel, MinSalary, MaxSalary, Status, Description FROM Positions WHERE PositionID = ? AND IsDeleted = 0", (id,))
     position_data = cursor.fetchone()
     conn.close()
 
@@ -251,7 +251,7 @@ def delete_position(id):
     cursor = conn.cursor()
 
     try:
-        cursor.execute("SELECT PositionName FROM Positions WHERE PositionID = %s AND IsDeleted = 0", (id,))
+        cursor.execute("SELECT PositionName FROM Positions WHERE PositionID = ? AND IsDeleted = 0", (id,))
         pos_row = cursor.fetchone()
         if not pos_row:
             flash('Chức vụ không tồn tại hoặc đã bị xóa trước đó!', 'danger')
@@ -259,12 +259,12 @@ def delete_position(id):
         
         position_name = pos_row[0]
 
-        # Kiểm tra xem có nhân viên nào đang giữ chức vụ này không
-        cursor.execute("SELECT COUNT(*) FROM Employees WHERE PositionID = %s AND COALESCE(IsDeleted, 0) = 0", (id,))
+        # MSSQL: Dùng ISNULL thay cho COALESCE
+        cursor.execute("SELECT COUNT(*) FROM Employees WHERE PositionID = ? AND ISNULL(IsDeleted, 0) = 0", (id,))
         if cursor.fetchone()[0] > 0:
             flash('Không thể xóa chức vụ này vì đang có nhân viên giữ chức vụ!', 'danger')
         else:
-            cursor.execute("UPDATE Positions SET IsDeleted = 1 WHERE PositionID = %s", (id,))
+            cursor.execute("UPDATE Positions SET IsDeleted = 1 WHERE PositionID = ?", (id,))
             conn.commit()
             
             create_notification(
@@ -307,14 +307,14 @@ def delete_selected_positions():
         failed_count = 0
 
         for pos_id in position_ids:
-            cursor.execute("SELECT COUNT(*) FROM Employees WHERE PositionID = %s AND COALESCE(IsDeleted, 0) = 0", (pos_id,))
+            cursor.execute("SELECT COUNT(*) FROM Employees WHERE PositionID = ? AND ISNULL(IsDeleted, 0) = 0", (pos_id,))
             if cursor.fetchone()[0] > 0:
                 failed_count += 1
             else:
                 valid_delete_ids.append(pos_id)
 
         if len(valid_delete_ids) > 0:
-            format_strings = ','.join(['%s'] * len(valid_delete_ids))
+            format_strings = ','.join(['?'] * len(valid_delete_ids))
             
             cursor.execute(f"SELECT PositionID, PositionName FROM Positions WHERE PositionID IN ({format_strings}) AND IsDeleted = 0", tuple(valid_delete_ids))
             records = cursor.fetchall()

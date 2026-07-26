@@ -80,23 +80,23 @@ def reports():
         params = []
 
         if department:
-            where.append("D.DepartmentName = %s")
+            where.append("D.DepartmentName = ?")
             params.append(department)
 
         if position:
-            where.append("P.PositionName = %s")
+            where.append("P.PositionName = ?")
             params.append(position)
 
         if status:
-            where.append("E.Status = %s")
+            where.append("E.Status = ?")
             params.append(status)
 
         if from_date:
-            where.append("E.HireDate >= %s")
+            where.append("E.HireDate >= ?")
             params.append(from_date)
 
         if to_date:
-            where.append("E.HireDate <= %s")
+            where.append("E.HireDate <= ?")
             params.append(to_date)
 
         condition = " WHERE " + " AND ".join(where)
@@ -119,12 +119,12 @@ def reports():
         cursor.execute("SELECT COUNT(*) FROM Positions WHERE IsDeleted = 0")
         total_positions = cursor.fetchone()[0]
 
-        # Đã bỏ N'...' ở các chuỗi tiếng Việt
+        # MSSQL: Dùng N'...' hỗ trợ tiếng Việt có dấu
         cursor.execute(f"""
             SELECT COUNT(*) FROM Employees E 
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0 
-            {condition} AND E.Status = 'Đang làm'
+            {condition} AND E.Status = N'Đang làm'
         """, tuple(params))
         working_employees = cursor.fetchone()[0]
 
@@ -132,7 +132,7 @@ def reports():
             SELECT COUNT(*) FROM Employees E 
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0 
-            {condition} AND E.Status = 'Nghỉ việc'
+            {condition} AND E.Status = N'Nghỉ việc'
         """, tuple(params))
         quit_employees = cursor.fetchone()[0]
 
@@ -140,7 +140,7 @@ def reports():
             SELECT COUNT(*) FROM Employees E 
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0 
-            {condition} AND E.Status = 'Thử việc'
+            {condition} AND E.Status = N'Thử việc'
         """, tuple(params))
         probation_employees = cursor.fetchone()[0]
 
@@ -150,13 +150,13 @@ def reports():
             INNER JOIN Employees E ON L.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0 
-            {condition} AND L.IsDeleted = 0 AND L.Status = 'Chờ duyệt'
+            {condition} AND L.IsDeleted = 0 AND L.Status = N'Chờ duyệt'
         """, tuple(params))
         pending_leave = cursor.fetchone()[0]
 
-        # Đổi ISNULL -> COALESCE
+        # MSSQL: Dùng ISNULL
         cursor.execute(f"""
-            SELECT COALESCE(SUM(S.BaseSalary + S.Bonus + S.Allowance), 0) 
+            SELECT ISNULL(SUM(S.BaseSalary + S.Bonus + S.Allowance), 0) 
             FROM Salaries S 
             INNER JOIN Employees E ON S.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
@@ -165,40 +165,39 @@ def reports():
         """, tuple(params))
         total_salary = cursor.fetchone()[0]
 
-        # Đổi GETDATE() + DATEADD -> CURRENT_DATE + INTERVAL '30 days'
+        # MSSQL: Dùng GETDATE() và DATEADD(...)
         cursor.execute(f"""
             SELECT COUNT(*) 
             FROM Contracts C 
             INNER JOIN Employees E ON C.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0 
-            {condition} AND C.IsDeleted = 0 AND C.EndDate BETWEEN CURRENT_DATE AND (CURRENT_DATE + INTERVAL '30 days')
+            {condition} AND C.IsDeleted = 0 AND C.EndDate BETWEEN GETDATE() AND DATEADD(day, 30, GETDATE())
         """, tuple(params))
         expiring_contract = cursor.fetchone()[0]
 
-        # Đổi MONTH()/YEAR() -> EXTRACT()
+        # MSSQL: Dùng MONTH() và YEAR()
         cursor.execute(f"""
             SELECT COUNT(*)
             FROM Employees E
             LEFT JOIN Departments D ON E.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON E.PositionID = P.PositionID AND P.IsDeleted = 0
-            {condition} AND EXTRACT(MONTH FROM E.HireDate) = EXTRACT(MONTH FROM CURRENT_DATE) 
-                        AND EXTRACT(YEAR FROM E.HireDate) = EXTRACT(YEAR FROM CURRENT_DATE)
+            {condition} AND MONTH(E.HireDate) = MONTH(GETDATE()) 
+                        AND YEAR(E.HireDate) = YEAR(GETDATE())
         """, tuple(params))
         new_employee = cursor.fetchone()[0]
 
         # ==========================================================
         # Chart Data Processing
         # ==========================================================
-        # Đổi SELECT TOP 5 -> LIMIT 5
+        # MSSQL: Dùng SELECT TOP 5
         cursor.execute("""
-            SELECT E.FullName, MAX(S.BaseSalary + S.Bonus + S.Allowance) AS TotalSalary
+            SELECT TOP 5 E.FullName, MAX(S.BaseSalary + S.Bonus + S.Allowance) AS TotalSalary
             FROM Employees E
             INNER JOIN Salaries S ON E.EmployeeID = S.EmployeeID AND S.IsDeleted = 0
             WHERE E.IsDeleted = 0
             GROUP BY E.FullName
             ORDER BY TotalSalary DESC
-            LIMIT 5
         """)
         top_salaries_raw = cursor.fetchall()
         top_salaries = [{"FullName": row[0], "TotalSalary": float(row[1])} for row in top_salaries_raw]

@@ -34,14 +34,14 @@ def audit_logs():
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        # Thay ? bằng %s và LIKE bằng ILIKE
+        # MSSQL: Dùng ? và LIKE
         cursor.execute(
             """
             SELECT COUNT(*)
             FROM AuditLogs
-            WHERE (Username ILIKE %s OR Description ILIKE %s)
-              AND Module ILIKE %s
-              AND Action ILIKE %s
+            WHERE (Username LIKE ? OR Description LIKE ?)
+              AND Module LIKE ?
+              AND Action LIKE ?
             """,
             (
                 f"%{keyword}%",
@@ -52,7 +52,7 @@ def audit_logs():
         )
         total_records = cursor.fetchone()[0]
 
-        # Thay cú pháp OFFSET ROWS FETCH NEXT bằng LIMIT OFFSET của PostgreSQL
+        # MSSQL: Phân trang dùng OFFSET ... ROWS FETCH NEXT ... ROWS ONLY
         cursor.execute(
             """
             SELECT
@@ -68,19 +68,19 @@ def audit_logs():
                 UserAgent,
                 CreatedAt
             FROM AuditLogs
-            WHERE (Username ILIKE %s OR Description ILIKE %s)
-              AND Module ILIKE %s
-              AND Action ILIKE %s
+            WHERE (Username LIKE ? OR Description LIKE ?)
+              AND Module LIKE ?
+              AND Action LIKE ?
             ORDER BY CreatedAt DESC
-            LIMIT %s OFFSET %s
+            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
             """,
             (
                 f"%{keyword}%",
                 f"%{keyword}%",
                 f"%{module}%",
                 f"%{action}%",
-                per_page,
-                offset
+                offset,
+                per_page
             )
         )
         logs = cursor.fetchall()
@@ -156,7 +156,16 @@ def export_audit_logs_csv():
             if isinstance(row, tuple):
                 writer.writerow(list(row))
             else:
-                writer.writerow(row)
+                writer.writerow([
+                    getattr(row, 'CreatedAt', row[0]),
+                    getattr(row, 'Username', row[1]),
+                    getattr(row, 'Role', row[2]),
+                    getattr(row, 'Module', row[3]),
+                    getattr(row, 'Action', row[4]),
+                    getattr(row, 'Description', row[5]),
+                    getattr(row, 'IPAddress', row[6]),
+                    getattr(row, 'UserAgent', row[7])
+                ])
         
         log_activity(
             module='Audit', 

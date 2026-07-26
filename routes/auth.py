@@ -67,15 +67,23 @@ def login():
             conn = get_connection()
             cursor = conn.cursor()
             
-            # %s thay cho ?
-            cursor.execute("SELECT UserID, Username, PasswordHash, FullName, Role, IsActive FROM Users WHERE Username = %s", (username,))
+            # MSSQL: Dùng ? làm tham số
+            cursor.execute("SELECT UserID, Username, PasswordHash, FullName, Role, IsActive FROM Users WHERE Username = ?", (username,))
             user = cursor.fetchone()
 
             if user is None:
                 flash('Tên đăng nhập không tồn tại.', 'danger')
                 return redirect(url_for('auth.login'))
 
-            user_id, db_username, password_hash, full_name, role, is_active = user[0], user[1], user[2], user[3], user[4], user[5]
+            if isinstance(user, tuple):
+                user_id, db_username, password_hash, full_name, role, is_active = user[0], user[1], user[2], user[3], user[4], user[5]
+            else:
+                user_id = getattr(user, 'UserID', user[0])
+                db_username = getattr(user, 'Username', user[1])
+                password_hash = getattr(user, 'PasswordHash', user[2])
+                full_name = getattr(user, 'FullName', user[3])
+                role = getattr(user, 'Role', user[4])
+                is_active = getattr(user, 'IsActive', user[5])
 
             if not verify_password(password, password_hash):
                 flash('Mật khẩu không chính xác.', 'danger')
@@ -85,8 +93,8 @@ def login():
                 flash('Tài khoản đã bị khóa.', 'danger')
                 return redirect(url_for('auth.login'))
 
-            # CURRENT_TIMESTAMP thay cho GETDATE() và %s thay cho ?
-            cursor.execute("UPDATE Users SET LastLogin = CURRENT_TIMESTAMP WHERE UserID = %s", (user_id,))
+            # MSSQL: Dùng GETDATE() và ? làm tham số
+            cursor.execute("UPDATE Users SET LastLogin = GETDATE() WHERE UserID = ?", (user_id,))
             conn.commit()
 
             session['user_id'] = user_id
@@ -145,8 +153,8 @@ def forgot_password():
         conn = get_connection()
         cursor = conn.cursor()
         try:
-            # %s thay cho ?
-            cursor.execute("SELECT UserID FROM Users WHERE Username = %s", (username,))
+            # MSSQL: Dùng ? làm tham số
+            cursor.execute("SELECT UserID FROM Users WHERE Username = ?", (username,))
             user = cursor.fetchone()
 
             if user is None:
@@ -154,8 +162,8 @@ def forgot_password():
                 return redirect(url_for('auth.forgot_password'))
 
             new_password_hash = hash_password(password)
-            # %s thay cho ?
-            cursor.execute("UPDATE Users SET PasswordHash = %s WHERE Username = %s", (new_password_hash, username))
+            # MSSQL: Dùng ? làm tham số
+            cursor.execute("UPDATE Users SET PasswordHash = ? WHERE Username = ?", (new_password_hash, username))
             conn.commit()
 
             log_activity(
@@ -208,21 +216,23 @@ def change_password():
         conn = get_connection()
         cursor = conn.cursor()
         try:
-            # %s thay cho ?
-            cursor.execute("SELECT PasswordHash FROM Users WHERE UserID = %s", (user_id,))
+            # MSSQL: Dùng ? làm tham số
+            cursor.execute("SELECT PasswordHash FROM Users WHERE UserID = ?", (user_id,))
             user = cursor.fetchone()
 
-            if not user or not verify_password(old_password, user[0]):
+            db_password_hash = user[0] if isinstance(user, tuple) else getattr(user, 'PasswordHash', user[0])
+
+            if not user or not verify_password(old_password, db_password_hash):
                 flash('Mật khẩu hiện tại không đúng.', 'danger')
                 return redirect(url_for('auth.change_password'))
 
-            if verify_password(new_password, user[0]):
+            if verify_password(new_password, db_password_hash):
                 flash('Mật khẩu mới phải khác với mật khẩu hiện tại.', 'danger')
                 return redirect(url_for('auth.change_password'))
 
             new_password_hash = hash_password(new_password)
-            # %s thay cho ?
-            cursor.execute("UPDATE Users SET PasswordHash = %s WHERE UserID = %s", (new_password_hash, user_id))
+            # MSSQL: Dùng ? làm tham số
+            cursor.execute("UPDATE Users SET PasswordHash = ? WHERE UserID = ?", (new_password_hash, user_id))
             conn.commit()
 
             username = session.get('username', 'Unknown')

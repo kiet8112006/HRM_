@@ -47,10 +47,11 @@ def get_unread_count():
     conn = get_connection()
     cursor = conn.cursor()
     try:
+        # MSSQL: Dùng ? làm tham số
         cursor.execute("""
             SELECT COUNT(*)
             FROM Notifications
-            WHERE IsRead = 0 AND (ReceiverRole = %s OR ReceiverRole IS NULL)
+            WHERE IsRead = 0 AND (ReceiverRole = ? OR ReceiverRole IS NULL)
         """, (role,))
         count = cursor.fetchone()[0]
         return count
@@ -72,6 +73,7 @@ def notifications():
     conn = get_connection()
     cursor = conn.cursor()
     try:
+        # MSSQL: Dùng ? làm tham số
         cursor.execute("""
             SELECT
                 NotificationID,
@@ -82,20 +84,24 @@ def notifications():
                 IsRead,
                 CreatedAt
             FROM Notifications
-            WHERE ReceiverRole = %s OR ReceiverRole IS NULL
+            WHERE ReceiverRole = ? OR ReceiverRole IS NULL
             ORDER BY CreatedAt DESC
         """, (role,))
         rows = cursor.fetchall()
 
         notification_data = []
         for n in rows:
-            # Tương thích cả Dict/Row object và Tuple (PostgreSQL/Psycopg2)
+            # Tương thích linh hoạt với cả Tuple lẫn pyodbc Row object
             if isinstance(n, tuple):
                 n_id, title, message, n_type, url, is_read, created_at = n[0], n[1], n[2], n[3], n[4], n[5], n[6]
             else:
-                n_id, title, message, n_type, url, is_read, created_at = (
-                    n.NotificationID, n.Title, n.Message, n.Type, n.Url, n.IsRead, n.CreatedAt
-                )
+                n_id = getattr(n, 'NotificationID', n[0])
+                title = getattr(n, 'Title', n[1])
+                message = getattr(n, 'Message', n[2])
+                n_type = getattr(n, 'Type', n[3])
+                url = getattr(n, 'Url', n[4])
+                is_read = getattr(n, 'IsRead', n[5])
+                created_at = getattr(n, 'CreatedAt', n[6])
 
             notification_data.append({
                 'NotificationID': n_id,
@@ -108,11 +114,11 @@ def notifications():
                 'TimeAgo': time_ago(created_at)
             })
 
-        # Sửa logic count: Lọc unread theo Role dùng %s
+        # MSSQL: Lọc unread dùng ?
         cursor.execute("""
             SELECT COUNT(*)
             FROM Notifications
-            WHERE IsRead = 0 AND (ReceiverRole = %s OR ReceiverRole IS NULL)
+            WHERE IsRead = 0 AND (ReceiverRole = ? OR ReceiverRole IS NULL)
         """, (role,))
         unread_count = cursor.fetchone()[0]
 
@@ -138,10 +144,11 @@ def read_notification(id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
+        # MSSQL: Dùng ? làm tham số
         cursor.execute("""
             UPDATE Notifications
             SET IsRead = 1
-            WHERE NotificationID = %s
+            WHERE NotificationID = ?
         """, (id,))
         conn.commit()
     except Exception as e:
@@ -164,10 +171,11 @@ def read_all_notifications():
     conn = get_connection()
     cursor = conn.cursor()
     try:
+        # MSSQL: Dùng ? làm tham số
         cursor.execute("""
             UPDATE Notifications
             SET IsRead = 1
-            WHERE IsRead = 0 AND (ReceiverRole = %s OR ReceiverRole IS NULL)
+            WHERE IsRead = 0 AND (ReceiverRole = ? OR ReceiverRole IS NULL)
         """, (role,))
         conn.commit()
         flash("Đã đánh dấu đọc tất cả thông báo!", "success")

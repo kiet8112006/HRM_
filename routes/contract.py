@@ -115,16 +115,18 @@ def contracts():
     conn = get_connection()
     cursor = conn.cursor()
     try:
+        # MSSQL: Dùng LIKE và ?
         cursor.execute(""" 
             SELECT COUNT(*) 
             FROM Contracts C
             LEFT JOIN Employees E ON C.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
             WHERE C.IsDeleted = 0 
-              AND (C.ContractCode ILIKE %s OR E.FullName ILIKE %s)
-              AND C.Status ILIKE %s
+              AND (C.ContractCode LIKE ? OR E.FullName LIKE ?)
+              AND C.Status LIKE ?
         """, (f"%{keyword}%", f"%{keyword}%", f"%{status}%"))
         total_records = cursor.fetchone()[0]
 
+        # MSSQL: Phân trang bằng OFFSET ... ROWS FETCH NEXT ... ROWS ONLY
         cursor.execute("""
             SELECT
                 C.ContractID, C.ContractCode, C.ContractNumber, E.FullName, C.ContractType,
@@ -134,11 +136,11 @@ def contracts():
             LEFT JOIN Departments D ON C.DepartmentID = D.DepartmentID AND D.IsDeleted = 0
             LEFT JOIN Positions P ON C.PositionID = P.PositionID AND P.IsDeleted = 0
             WHERE C.IsDeleted = 0 
-              AND (C.ContractCode ILIKE %s OR E.FullName ILIKE %s)
-              AND C.Status ILIKE %s
+              AND (C.ContractCode LIKE ? OR E.FullName LIKE ?)
+              AND C.Status LIKE ?
             ORDER BY C.ContractID DESC
-            LIMIT %s OFFSET %s
-        """, (f"%{keyword}%", f"%{keyword}%", f"%{status}%", per_page, offset))
+            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+        """, (f"%{keyword}%", f"%{keyword}%", f"%{status}%", offset, per_page))
         contracts_list = cursor.fetchall()
 
         total_pages = max(1, (total_records + per_page - 1) // per_page)
@@ -195,22 +197,22 @@ def add_contract():
                 filename = save_contract(file)
 
             # 3. Kiểm tra trùng mã hợp đồng
-            cursor.execute("SELECT COUNT(*) FROM Contracts WHERE ContractCode = %s AND IsDeleted = 0", (contract_code,))
+            cursor.execute("SELECT COUNT(*) FROM Contracts WHERE ContractCode = ? AND IsDeleted = 0", (contract_code,))
             if cursor.fetchone()[0] > 0:
                 raise ContractValidationError('Mã hợp đồng đã tồn tại!')
 
-            # 4. Insert Database
+            # 4. Insert Database (Chuyển %s thành ?)
             cursor.execute("""
                 INSERT INTO Contracts (
                     EmployeeID, ContractCode, ContractNumber, ContractType, StartDate, EndDate, 
                     BasicSalary, WorkLocation, DepartmentID, PositionID, Signer, SignDate, 
                     ProbationMonths, ContractFile, Description, Status, IsDeleted
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
             """, (employee_id, contract_code, contract_number, contract_type, start_date, end_date,
                   basic_salary, work_location, department_id, position_id, signer, sign_date,
                   probation_months, filename, description, status))
             
-            cursor.execute("SELECT FullName FROM Employees WHERE EmployeeID = %s", (employee_id,))
+            cursor.execute("SELECT FullName FROM Employees WHERE EmployeeID = ?", (employee_id,))
             emp_row = cursor.fetchone()
             emp_name = emp_row[0] if emp_row else ""
             
@@ -253,7 +255,7 @@ def edit_contract(id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT * FROM Contracts WHERE ContractID = %s AND IsDeleted = 0", (id,))
+        cursor.execute("SELECT * FROM Contracts WHERE ContractID = ? AND IsDeleted = 0", (id,))
         contract = cursor.fetchone()
         if not contract:
             flash("Hợp đồng không tồn tại hoặc đã bị xóa!", "danger")
@@ -284,7 +286,7 @@ def edit_contract(id):
             validate_contract_description(description)
             start_date, end_date = validate_contract_dates(start_date_str, end_date_str)
 
-            cursor.execute("SELECT COUNT(*) FROM Contracts WHERE ContractCode = %s AND ContractID <> %s AND IsDeleted = 0", (contract_code, id))
+            cursor.execute("SELECT COUNT(*) FROM Contracts WHERE ContractCode = ? AND ContractID <> ? AND IsDeleted = 0", (contract_code, id))
             if cursor.fetchone()[0] > 0:
                 raise ContractValidationError('Mã hợp đồng đã tồn tại!')
 
@@ -300,15 +302,15 @@ def edit_contract(id):
 
             cursor.execute("""
                 UPDATE Contracts SET 
-                    EmployeeID = %s, ContractCode = %s, ContractNumber = %s, ContractType = %s, StartDate = %s, EndDate = %s, 
-                    BasicSalary = %s, WorkLocation = %s, DepartmentID = %s, PositionID = %s, Signer = %s, SignDate = %s, 
-                    ProbationMonths = %s, ContractFile = %s, Description = %s, Status = %s
-                WHERE ContractID = %s AND IsDeleted = 0
+                    EmployeeID = ?, ContractCode = ?, ContractNumber = ?, ContractType = ?, StartDate = ?, EndDate = ?, 
+                    BasicSalary = ?, WorkLocation = ?, DepartmentID = ?, PositionID = ?, Signer = ?, SignDate = ?, 
+                    ProbationMonths = ?, ContractFile = ?, Description = ?, Status = ?
+                WHERE ContractID = ? AND IsDeleted = 0
             """, (employee_id, contract_code, contract_number, contract_type, start_date, end_date,
                   basic_salary, work_location, department_id, position_id, signer, sign_date,
                   probation_months, filename, description, status, id))
             
-            cursor.execute("SELECT FullName FROM Employees WHERE EmployeeID = %s", (employee_id,))
+            cursor.execute("SELECT FullName FROM Employees WHERE EmployeeID = ?", (employee_id,))
             emp_row = cursor.fetchone()
             emp_name = emp_row[0] if emp_row else ""
             
@@ -352,7 +354,7 @@ def download_contract(id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT ContractFile FROM Contracts WHERE ContractID = %s AND IsDeleted = 0", (id,))
+        cursor.execute("SELECT ContractFile FROM Contracts WHERE ContractID = ? AND IsDeleted = 0", (id,))
         row = cursor.fetchone()
         contract_file = row[0] if row else None
         if not row or not contract_file:
@@ -375,7 +377,7 @@ def preview_contract(id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT ContractFile FROM Contracts WHERE ContractID = %s AND IsDeleted = 0", (id,))
+        cursor.execute("SELECT ContractFile FROM Contracts WHERE ContractID = ? AND IsDeleted = 0", (id,))
         row = cursor.fetchone()
         contract_file = row[0] if row else None
         if not row or not contract_file:
@@ -405,7 +407,7 @@ def delete_contract(id):
         cursor.execute("""
             SELECT C.ContractCode, E.FullName FROM Contracts C
             LEFT JOIN Employees E ON C.EmployeeID = E.EmployeeID AND E.IsDeleted = 0
-            WHERE C.ContractID = %s AND C.IsDeleted = 0
+            WHERE C.ContractID = ? AND C.IsDeleted = 0
         """, (id,))
         row = cursor.fetchone()
         
@@ -415,7 +417,7 @@ def delete_contract(id):
             
         contract_code, emp_name = row[0], row[1]
 
-        cursor.execute("UPDATE Contracts SET IsDeleted = 1 WHERE ContractID = %s", (id,))
+        cursor.execute("UPDATE Contracts SET IsDeleted = 1 WHERE ContractID = ?", (id,))
         conn.commit()
 
         create_notification(
@@ -451,7 +453,7 @@ def delete_selected_contracts():
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        placeholders = ', '.join(['%s'] * len(contract_ids))
+        placeholders = ', '.join(['?'] * len(contract_ids))
         
         query_info = f"""
             SELECT C.ContractCode, E.FullName FROM Contracts C

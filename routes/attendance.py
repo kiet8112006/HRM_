@@ -61,17 +61,19 @@ def attendance():
     conn = get_connection()
     cursor = conn.cursor()
     try:
+        # MSSQL: Dùng LIKE và ?
         cursor.execute(""" 
             SELECT COUNT(*) 
             FROM Attendance A 
             INNER JOIN Employees E ON A.EmployeeID = E.EmployeeID 
             WHERE A.IsDeleted = 0 
               AND E.IsDeleted = 0 
-              AND E.FullName ILIKE %s 
-              AND A.Status ILIKE %s 
+              AND E.FullName LIKE ? 
+              AND A.Status LIKE ? 
         """, (f"%{keyword}%", f"%{status}%"))
         total_records = cursor.fetchone()[0]
 
+        # MSSQL: Phân trang bằng OFFSET ... ROWS FETCH NEXT ... ROWS ONLY
         cursor.execute("""
             SELECT
                 A.AttendanceID, E.Fullname, A.Date, A.CheckInTime, A.CheckOutTime, A.WorkingHours, A.OvertimeHours, A.LateMinutes, A.EarlyLeaveMinutes,
@@ -80,10 +82,10 @@ def attendance():
             INNER JOIN Employees E ON A.EmployeeID = E.EmployeeID
             WHERE A.IsDeleted = 0 
               AND E.IsDeleted = 0 
-              AND E.FullName ILIKE %s AND A.Status ILIKE %s
+              AND E.FullName LIKE ? AND A.Status LIKE ?
             ORDER BY A.Date DESC, A.AttendanceID DESC
-            LIMIT %s OFFSET %s
-        """, (f"%{keyword}%", f"%{status}%", per_page, offset))
+            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+        """, (f"%{keyword}%", f"%{status}%", offset, per_page))
         attendances = cursor.fetchall()
 
         total_pages = max(1, (total_records + per_page - 1) // per_page)
@@ -133,24 +135,24 @@ def add_attendance():
             today = datetime.today().date()
             validate_attendance_date(attendance_date, today)
 
-            cursor.execute("SELECT COUNT(*) FROM Employees WHERE EmployeeID = %s AND IsDeleted = 0", (employee_id,))
+            cursor.execute("SELECT COUNT(*) FROM Employees WHERE EmployeeID = ? AND IsDeleted = 0", (employee_id,))
             if cursor.fetchone()[0] == 0:
                 raise AttendanceValidationError('Nhân viên không tồn tại hoặc đã bị xóa!')
 
-            cursor.execute("SELECT COUNT(*) FROM Attendance WHERE EmployeeID = %s AND Date = %s AND IsDeleted = 0", (employee_id, attendance_date))
+            cursor.execute("SELECT COUNT(*) FROM Attendance WHERE EmployeeID = ? AND Date = ? AND IsDeleted = 0", (employee_id, attendance_date))
             if cursor.fetchone()[0] > 0:
                 raise AttendanceValidationError('Nhân viên đã được chấm công trong ngày này!')
 
             checkin, checkout, working_hours, overtime_hours, late_minutes, early_leave_minutes = validate_checkin_checkout_times(checkin, checkout, status)
 
-            # 2. Insert DB
+            # 2. Insert DB (Chuyển %s thành ?)
             cursor.execute("""
                 INSERT INTO Attendance
                 (EmployeeID, Date, CheckInTime, CheckOutTime, WorkingHours, OvertimeHours, Status, LateMinutes, EarlyLeaveMinutes, CheckInMethod, ApprovalStatus, Notes, IsDeleted)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
             """, (employee_id, attendance_date, checkin, checkout, working_hours, overtime_hours, status, late_minutes, early_leave_minutes, checkin_method, approval_status, notes))
 
-            cursor.execute("SELECT FullName FROM Employees WHERE EmployeeID = %s", (employee_id,))
+            cursor.execute("SELECT FullName FROM Employees WHERE EmployeeID = ?", (employee_id,))
             emp_row = cursor.fetchone()
             emp_name = emp_row[0] if emp_row else ""
 
@@ -199,7 +201,7 @@ def edit_attendance(id):
     cursor = conn.cursor()
 
     try:
-        cursor.execute("SELECT * FROM Attendance WHERE AttendanceID = %s AND IsDeleted = 0", (id,))
+        cursor.execute("SELECT * FROM Attendance WHERE AttendanceID = ? AND IsDeleted = 0", (id,))
         attendance_record = cursor.fetchone()
 
         if not attendance_record:
@@ -225,11 +227,11 @@ def edit_attendance(id):
             today = datetime.today().date()
             validate_attendance_date(attendance_date, today)
 
-            cursor.execute("SELECT COUNT(*) FROM Employees WHERE EmployeeID = %s AND IsDeleted = 0", (employee_id,))
+            cursor.execute("SELECT COUNT(*) FROM Employees WHERE EmployeeID = ? AND IsDeleted = 0", (employee_id,))
             if cursor.fetchone()[0] == 0:
                 raise AttendanceValidationError('Nhân viên không tồn tại!')
 
-            cursor.execute("SELECT COUNT(*) FROM Attendance WHERE EmployeeID = %s AND Date = %s AND AttendanceID <> %s AND IsDeleted = 0", (employee_id, attendance_date, id))
+            cursor.execute("SELECT COUNT(*) FROM Attendance WHERE EmployeeID = ? AND Date = ? AND AttendanceID <> ? AND IsDeleted = 0", (employee_id, attendance_date, id))
             if cursor.fetchone()[0] > 0:
                 raise AttendanceValidationError('Nhân viên đã được chấm công trong ngày này!')
 
@@ -238,12 +240,12 @@ def edit_attendance(id):
             # 2. Update DB
             cursor.execute("""
                 UPDATE Attendance
-                SET EmployeeID = %s, Date = %s, CheckInTime = %s, CheckOutTime = %s, WorkingHours = %s, OvertimeHours = %s,
-                    Status = %s, LateMinutes = %s, EarlyLeaveMinutes = %s, CheckInMethod = %s, ApprovalStatus = %s, Notes = %s
-                WHERE AttendanceID = %s
+                SET EmployeeID = ?, Date = ?, CheckInTime = ?, CheckOutTime = ?, WorkingHours = ?, OvertimeHours = ?,
+                    Status = ?, LateMinutes = ?, EarlyLeaveMinutes = ?, CheckInMethod = ?, ApprovalStatus = ?, Notes = ?
+                WHERE AttendanceID = ?
             """, (employee_id, attendance_date, checkin, checkout, working_hours, overtime_hours, status, late_minutes, early_leave_minutes, checkin_method, approval_status, notes, id))
 
-            cursor.execute("SELECT FullName FROM Employees WHERE EmployeeID = %s", (employee_id,))
+            cursor.execute("SELECT FullName FROM Employees WHERE EmployeeID = ?", (employee_id,))
             emp_row = cursor.fetchone()
             emp_name = emp_row[0] if emp_row else ""
 
@@ -296,7 +298,7 @@ def delete_attendance(id):
         cursor.execute("""
             SELECT E.FullName, A.Date FROM Attendance A 
             INNER JOIN Employees E ON A.EmployeeID = E.EmployeeID 
-            WHERE A.AttendanceID = %s AND A.IsDeleted = 0
+            WHERE A.AttendanceID = ? AND A.IsDeleted = 0
         """, (id,))
         info_row = cursor.fetchone()
         
@@ -308,7 +310,7 @@ def delete_attendance(id):
         att_date = info_row[1]
         info_str = f"of employee {emp_name} on {att_date}"
 
-        cursor.execute(""" UPDATE Attendance SET IsDeleted = 1 WHERE AttendanceID = %s """, (id,))
+        cursor.execute(""" UPDATE Attendance SET IsDeleted = 1 WHERE AttendanceID = ? """, (id,))
         conn.commit()
 
         create_notification(
@@ -352,7 +354,7 @@ def delete_selected_attendance():
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        placeholders = ', '.join(['%s'] * len(attendance_ids))
+        placeholders = ', '.join(['?'] * len(attendance_ids))
         
         query_info = f"""
             SELECT E.FullName, A.Date FROM Attendance A
