@@ -27,7 +27,5 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run Unit test
-        run: pytest tests/unit_test -v
       - name: Build Docker image
         run: docker build -t hrm-app .

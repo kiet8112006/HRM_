@@ -92,7 +92,7 @@
 
                             <!-- Sửa Contract -->
                             {% if session.get('role') in ['Admin', 'Manager'] %}
-                            <a href="/edit_contract/{{ contract.ContractID }}"
+                            <a href="{{ url_for('contract.edit_contract', id=contract.ContractID) }}"
                                class="btn btn-sm btn-primary"
                                title="Sửa">
                                 ✏ Sửa
@@ -101,7 +101,7 @@
 
                             <!-- Xóa Contract -->
                             {% if session.get('role') == 'Admin' %}
-                            <a href="/delete_contract/{{ contract.ContractID }}"
+                            <a href="{{ url_for('contract.delete_contract', id=contract.ContractID) }}"
                                class="btn btn-sm btn-danger"
                                title="Xóa"
                                onclick="return confirm('Bạn có chắc muốn xóa hợp đồng này? Hành động này không thể hoàn tác!')">

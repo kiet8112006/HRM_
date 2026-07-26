@@ -3,7 +3,7 @@
     {% if page > 1 %}
 
         <a
-            href="/contracts?page={{ page-1 }}&keyword={{ keyword }}&status={{ status }}">
+            href="{{ url_for('contract.list_contracts', page=page-1, keyword=keyword, status=status) }}">
 
             ← Trước
 
@@ -20,7 +20,7 @@
     {% if page < total_pages %}
 
         <a
-            href="/contracts?page={{ page+1 }}&keyword={{ keyword }}&status={{ status }}">
+            href="{{ url_for('contract.list_contracts', page=page+1, keyword=keyword, status=status) }}">
 
             Sau →
 

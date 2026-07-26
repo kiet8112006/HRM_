@@ -28,63 +28,64 @@
             </a>
 
             {% if session.get('role') in ['Admin', 'Manager'] %}
-            <a href="{{ url_for('employee.employees') }}" class="sidebar-link {% if 'employee' in request.endpoint %}active{% endif %}">
+            <a href="{{ url_for('employee.employees') }}" class="sidebar-link {% if request.endpoint and 'employee' in request.endpoint %}active{% endif %}">
                 <i class="sidebar-icon fa-solid fa-user-group"></i>
                 <span class="sidebar-text">Nhân viên</span>
             </a>
             {% endif %}
 
             {% if session.get('role') == 'Admin' %}
-            <a href="{{ url_for('department.departments') }}" class="sidebar-link {% if 'department' in request.endpoint %}active{% endif %}">
+            <a href="{{ url_for('department.departments') }}" class="sidebar-link {% if request.endpoint and 'department' in request.endpoint %}active{% endif %}">
                 <i class="sidebar-icon fa-solid fa-sitemap"></i>
                 <span class="sidebar-text">Phòng ban</span>
             </a>
             {% endif %}
 
             {% if session.get('role') == 'Admin' %}
-            <a href="{{ url_for('position.positions') }}" class="sidebar-link {% if 'position' in request.endpoint %}active{% endif %}">
+            <a href="{{ url_for('position.positions') }}" class="sidebar-link {% if request.endpoint and 'position' in request.endpoint %}active{% endif %}">
                 <i class="sidebar-icon fa-solid fa-briefcase"></i>
                 <span class="sidebar-text">Chức vụ</span>
             </a>
             {% endif %}
             
             {% if session.get('role') == 'Admin' %}
-            <a href="{{ url_for('salary.salaries') }}" class="sidebar-link {% if 'salary' in request.endpoint %}active{% endif %}">
+            <a href="{{ url_for('salary.salaries') }}" class="sidebar-link {% if request.endpoint and 'salary' in request.endpoint %}active{% endif %}">
                 <i class="sidebar-icon fa-solid fa-file-invoice-dollar"></i>
                 <span class="sidebar-text">Lương</span>
             </a>
             {% endif %}
             
             {% if session.get('role') == 'Admin' %}
-            <a href="{{ url_for('contract.contracts') }}" class="sidebar-link {% if 'contract' in request.endpoint %}active{% endif %}">
+            <!-- Đã sửa dòng 59 từ contract.contracts thành contract.list_contracts -->
+            <a href="{{ url_for('contract.list_contracts') }}" class="sidebar-link {% if request.endpoint and 'contract' in request.endpoint %}active{% endif %}">
                 <i class="sidebar-icon fa-solid fa-file-contract"></i>
                 <span class="sidebar-text">Hợp đồng</span>
             </a>
             {% endif %}
             
             {% if session.get('role') == 'Admin' %}
-            <a href="{{ url_for('attendance.attendance') }}" class="sidebar-link {% if 'attendance' in request.endpoint %}active{% endif %}">
+            <a href="{{ url_for('attendance.attendance') }}" class="sidebar-link {% if request.endpoint and 'attendance' in request.endpoint %}active{% endif %}">
                 <i class="sidebar-icon fa-solid fa-clock"></i>
                 <span class="sidebar-text">Chấm công</span>
             </a>
             {% endif %}
             
             {% if session.get('role') == 'Admin' %}
-            <a href="{{ url_for('leave.leave_requests') }}" class="sidebar-link {% if 'leave' in request.endpoint %}active{% endif %}">
+            <a href="{{ url_for('leave.leave_requests') }}" class="sidebar-link {% if request.endpoint and 'leave' in request.endpoint %}active{% endif %}">
                 <i class="sidebar-icon fa-solid fa-calendar-minus"></i>
                 <span class="sidebar-text">Nghỉ phép</span>
             </a>
             {% endif %}
             
             {% if session.get("role") in ["Admin","Manager"] %}
-            <a href="{{ url_for('report.reports') }}" class="sidebar-link {% if 'report' in request.endpoint %}active{% endif %}">
+            <a href="{{ url_for('report.reports') }}" class="sidebar-link {% if request.endpoint and 'report' in request.endpoint %}active{% endif %}">
                 <i class="sidebar-icon fa-solid fa-chart-pie"></i>
                 <span class="sidebar-text">Báo cáo</span>
             </a>
             {% endif %}
 
             {% if session.get('role') in ['Admin', 'Manager'] %}
-            <a href="{{ url_for('notification.notifications') }}" class="sidebar-link {% if 'notification' in request.endpoint %}active{% endif %}">
+            <a href="{{ url_for('notification.notifications') }}" class="sidebar-link {% if request.endpoint and 'notification' in request.endpoint %}active{% endif %}">
                 <i class="sidebar-icon fa-solid fa-bell"></i>
                 <span class="sidebar-text">Thông báo</span>
                 {% if unread_count > 0 %}
@@ -94,7 +95,7 @@
             {% endif %}
 
             {% if session.get('role') == 'Admin' %}
-            <a href="{{ url_for('audit.audit_logs') }}" class="sidebar-link {% if 'audit' in request.endpoint %}active{% endif %}">
+            <a href="{{ url_for('audit.audit_logs') }}" class="sidebar-link {% if request.endpoint and 'audit' in request.endpoint %}active{% endif %}">
                 <i class="sidebar-icon fa-solid fa-clipboard-list"></i>
                 <span class="sidebar-text">Audit Log</span>
             </a>
