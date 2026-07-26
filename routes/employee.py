@@ -26,6 +26,7 @@ from utils.upload import (
     save_citizen_back
 )
 from routes.audit import log_activity 
+import psycopg2.extras # Thêm thư viện này nếu dự án dùng psycopg2 cho PostgreSQL
 
 employee_bp = Blueprint("employee", __name__)
 
@@ -35,7 +36,7 @@ def get_cached_departments():
         @cache.cached(timeout=60, key_prefix='departments_list')
         def query_db():
             conn = get_connection()
-            cursor = conn.cursor()
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             try:
                 cursor.execute("SELECT DepartmentID, DepartmentName FROM Departments WHERE IsDeleted = 0 ORDER BY DepartmentName")
                 return cursor.fetchall()
@@ -44,7 +45,7 @@ def get_cached_departments():
         return query_db()
     except Exception:
         conn = get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         try:
             cursor.execute("SELECT DepartmentID, DepartmentName FROM Departments WHERE IsDeleted = 0 ORDER BY DepartmentName")
             return cursor.fetchall()
@@ -57,7 +58,7 @@ def get_cached_positions():
         @cache.cached(timeout=60, key_prefix='positions_list')
         def query_db():
             conn = get_connection()
-            cursor = conn.cursor()
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             try:
                 cursor.execute("SELECT PositionID, PositionName FROM Positions WHERE IsDeleted = 0 ORDER BY PositionName")
                 return cursor.fetchall()
@@ -66,7 +67,7 @@ def get_cached_positions():
         return query_db()
     except Exception:
         conn = get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         try:
             cursor.execute("SELECT PositionID, PositionName FROM Positions WHERE IsDeleted = 0 ORDER BY PositionName")
             return cursor.fetchall()
@@ -90,7 +91,8 @@ def employees():
     positions = get_cached_positions()
 
     conn = get_connection()
-    cursor = conn.cursor()
+    # Sử dụng RealDictCursor để kết quả trả về dưới dạng từ điển, khớp với các gọi biến emp.ColumnName trong HTML
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     try:
         cursor.execute("""
             SELECT COUNT(*) 
@@ -103,13 +105,15 @@ def employees():
               AND COALESCE(P.PositionName, '') ILIKE %s
               AND COALESCE(E.Status, 'Active') ILIKE %s
         """, (f"%{keyword}%", f"%{department}%", f"%{position}%", f"%{status}%"))
-        total_records = cursor.fetchone()[0]
+        total_records = cursor.fetchone()['count']
 
         cursor.execute("""
             SELECT E.EmployeeID,
                    'NV' || LPAD(CAST(E.EmployeeID AS TEXT), 4, '0') AS EmployeeCode,
                    E.FullName, 
-                   E.photo,
+                   E.photo AS Photo,
+                   E.CitizenFrontPhoto AS CitizenFront,
+                   E.CitizenBackPhoto AS CitizenBack,
                    E.Gender,
                    E.Phone,
                    E.Email,
@@ -365,6 +369,10 @@ def employee_detail(id):
     cursor = conn.cursor()
     try:
         cursor.execute(""" 
+            SELECT E.EmployeeID, 'NV' || LPAD(CAST(E.EmployeeID AS TEXT), 4, '0') AS EmployeeCode, 
+                   E.FullName, E.Gender, E.DOB, E.Phone, E.Email, E.CitizenID, E.Address, 
+                   E.Nationality, E.MaritalStatus, E.EmergencyContact, E.EmergencyPhone, E.HireDate, E.Status, 
+                   D.DepartmentName, P.PositionName 
             SELECT E.EmployeeID, 'NV' || LPAD(CAST(E.EmployeeID AS TEXT), 4, '0') AS EmployeeCode, 
                    E.FullName, E.Gender, E.DOB, E.Phone, E.Email, E.CitizenID, E.Address, 
                    E.Nationality, E.MaritalStatus, E.EmergencyContact, E.EmergencyPhone, E.HireDate, E.Status, 
