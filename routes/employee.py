@@ -32,20 +32,24 @@ employee_bp = Blueprint("employee", __name__)
 
 def get_cached_departments():
     try:
-        from app import cache
-        @cache.cached(timeout=60, key_prefix='departments_list')
-        def query_db():
-            conn = get_connection()
-            cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            try:
-                cursor.execute("SELECT DepartmentID, DepartmentName FROM Departments WHERE IsDeleted = 0 ORDER BY DepartmentName")
-                return cursor.fetchall()
-            finally:
-                conn.close()
-        return query_db()
+        from app import cache, app
+        # Thử lấy từ cache của ứng dụng
+        cached_data = cache.get('departments_list')
+        if cached_data is not None:
+            return cached_data
+            
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SELECT DepartmentID, DepartmentName FROM Departments WHERE IsDeleted = 0 ORDER BY DepartmentName")
+            result = cursor.fetchall()
+            cache.set('departments_list', result, timeout=60)
+            return result
+        finally:
+            conn.close()
     except Exception:
         conn = get_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor()
         try:
             cursor.execute("SELECT DepartmentID, DepartmentName FROM Departments WHERE IsDeleted = 0 ORDER BY DepartmentName")
             return cursor.fetchall()
@@ -54,26 +58,28 @@ def get_cached_departments():
 
 def get_cached_positions():
     try:
-        from app import cache
-        @cache.cached(timeout=60, key_prefix='positions_list')
-        def query_db():
-            conn = get_connection()
-            cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            try:
-                cursor.execute("SELECT PositionID, PositionName FROM Positions WHERE IsDeleted = 0 ORDER BY PositionName")
-                return cursor.fetchall()
-            finally:
-                conn.close()
-        return query_db()
+        from app import cache, app
+        cached_data = cache.get('positions_list')
+        if cached_data is not None:
+            return cached_data
+            
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SELECT PositionID, PositionName FROM Positions WHERE IsDeleted = 0 ORDER BY PositionName")
+            result = cursor.fetchall()
+            cache.set('positions_list', result, timeout=60)
+            return result
+        finally:
+            conn.close()
     except Exception:
         conn = get_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor()
         try:
             cursor.execute("SELECT PositionID, PositionName FROM Positions WHERE IsDeleted = 0 ORDER BY PositionName")
             return cursor.fetchall()
         finally:
             conn.close()
-
 @employee_bp.route("/employees")
 @login_required
 @role_required('Admin', 'Manager')
