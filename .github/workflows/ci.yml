@@ -26,3 +26,6 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Run Unit test
+        run: pytest tests/unit_test -v
