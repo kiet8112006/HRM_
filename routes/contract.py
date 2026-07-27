@@ -63,7 +63,7 @@ def list_contracts():
     conn.close()
     
     return render_template(
-        'contracts/list.html',
+        'contract/contracts.html',
         contracts=contracts,
         page=page,
         total_pages=total_pages,
@@ -133,7 +133,7 @@ def add_contract():
     positions = cursor.fetchall()
     
     conn.close()
-    return render_template('contracts/add.html', employees=employees, departments=departments, positions=positions)
+    return render_template('contrac/contracts.html', employees=employees, departments=departments, positions=positions)
 
 
 @contract_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
@@ -204,7 +204,7 @@ def edit_contract(id):
     positions = cursor.fetchall()
     
     conn.close()
-    return render_template('contracts/edit.html', contract=contract, employees=employees, departments=departments, positions=positions)
+    return render_template('contract/contracts.html', contract=contract, employees=employees, departments=departments, positions=positions)
 
 
 @contract_bp.route('/delete/<int:id>', methods=['POST'])
@@ -255,3 +255,31 @@ def export_contracts_csv():
         mimetype='text/csv',
         headers={'Content-Disposition': 'attachment; filename=contracts_report.csv'}
     )
+
+@contract_bp.route('/delete-selected', methods=['POST'])
+def delete_selected_contracts():
+    ids = request.form.getlist("contract_ids")
+
+    if not ids:
+        flash("Vui lòng chọn hợp đồng.", "warning")
+        return redirect(url_for("contract.list_contracts"))
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    placeholders = ",".join("?" * len(ids))
+
+    cursor.execute(
+        f"""
+        UPDATE Contracts
+        SET IsDeleted = 1
+        WHERE ContractID IN ({placeholders})
+        """,
+        ids,
+    )
+
+    conn.commit()
+    conn.close()
+
+    flash("Đã xóa các hợp đồng đã chọn.", "success")
+    return redirect(url_for("contract.list_contracts"))
